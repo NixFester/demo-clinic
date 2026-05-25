@@ -1,0 +1,323 @@
+@startuml
+
+' =========================================
+' SIMKlinik - Final Database v4.0
+' Compatible: PlantUML Online Server
+' Stack    : Laravel + MySQL + cPanel
+' Regulasi : PMK No. 24 Tahun 2022 (RME)
+' Jenis    : Klinik Kecantikan + Dokter Umum
+' Catatan  : Non-BPJS, swasta, tanpa triase,
+'            3 role: admin, dokter, karyawan
+' Perubahan dari v3:
+'   - Tambah tabel pengaturan (single-row config)
+'   - Tambah kolom id_referensi di detail_invoice
+'   - Tambah updated_at di tabel transaksional
+'   - Perbaiki relasi diagnosa (utama + sekunder)
+'   - Tambah kolom total_dibayar di invoice
+' =========================================
+
+skinparam linetype ortho
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #4A4A4A
+skinparam classHeaderBackgroundColor #1B4F8A
+skinparam classFontColor #FFFFFF
+skinparam classAttributeFontColor #111111
+skinparam arrowColor #4A4A4A
+skinparam packageBackgroundColor #EBF3FB
+skinparam packageBorderColor #2E75B6
+skinparam packageFontColor #1B4F8A
+skinparam shadowing false
+skinparam nodesep 60
+skinparam ranksep 60
+
+' =========================================
+' PACKAGE 1 - MASTER DATA
+' =========================================
+package "Master Data" {
+
+  class pengguna {
+    id : INT PK AI  ' <-- Diperbaiki
+    nama_lengkap : VARCHAR(100)
+    username : VARCHAR(50) UNIQUE
+    password : VARCHAR(255)
+    role : ENUM(admin,dokter,karyawan)
+    is_aktif : TINYINT(1) DEFAULT 1
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+  }
+
+  class spesialisasi {
+    id : INT PK AI  ' <-- Diperbaiki
+    nama_spesialisasi : VARCHAR(100)
+    created_at : TIMESTAMP  ' <-- Ditambahkan
+    updated_at : TIMESTAMP  ' <-- Ditambahkan
+  }
+
+  class dokter {
+    id : INT PK AI  ' <-- Diperbaiki
+    id_pengguna : INT FK
+    id_spesialisasi : INT FK
+    no_sip : VARCHAR(50)
+    is_aktif : TINYINT(1) DEFAULT 1
+    created_at : TIMESTAMP  ' <-- Ditambahkan
+    updated_at : TIMESTAMP  ' <-- Ditambahkan
+  }
+
+  class layanan {
+    id : INT PK AI  ' <-- Diperbaiki
+    nama_layanan : VARCHAR(150)
+    kategori : ENUM(kecantikan,medis,konsultasi)
+    harga : DECIMAL(12,2)
+    durasi_menit : INT DEFAULT 30
+    is_aktif : TINYINT(1) DEFAULT 1
+    created_at : TIMESTAMP  ' <-- Ditambahkan
+    updated_at : TIMESTAMP  ' <-- Ditambahkan
+  }
+
+  class produk {
+    id : INT PK AI  ' <-- Diperbaiki
+    nama_produk : VARCHAR(150)
+    kategori : ENUM(skincare,obat,suplemen,lainnya)
+    satuan : VARCHAR(20)
+    harga_jual : DECIMAL(12,2)
+    stok : INT DEFAULT 0
+    stok_minimum : INT DEFAULT 5
+    is_aktif : TINYINT(1) DEFAULT 1
+    created_at : TIMESTAMP  ' <-- Ditambahkan
+    updated_at : TIMESTAMP  ' <-- Ditambahkan
+  }
+
+  class diagnosa {
+    id : INT PK AI  ' <-- Diperbaiki
+    kode_icd10 : VARCHAR(10) UNIQUE
+    nama_diagnosa : VARCHAR(255)
+    created_at : TIMESTAMP  ' <-- Ditambahkan
+    updated_at : TIMESTAMP  ' <-- Ditambahkan
+  }
+
+  class pengaturan {
+    id : INT PK AI  ' <-- Diperbaiki
+    nama_klinik : VARCHAR(150)
+    alamat_klinik : TEXT
+    no_telepon_klinik : VARCHAR(20)
+    batas_diskon_karyawan : INT DEFAULT 20
+    footer_invoice : TEXT
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+  }
+}
+
+' =========================================
+' PACKAGE 2 - PASIEN
+' =========================================
+package "Manajemen Pasien" {
+
+  class pasien {
+    id : INT PK AI  ' <-- Diperbaiki
+    no_rekam_medis : VARCHAR(20) UNIQUE
+    nik : VARCHAR(16) UNIQUE
+    nama_lengkap : VARCHAR(100)
+    tempat_lahir : VARCHAR(100)
+    tanggal_lahir : DATE
+    jenis_kelamin : ENUM(L,P)
+    alamat : TEXT
+    no_telepon : VARCHAR(20)
+    no_whatsapp : VARCHAR(20)
+    golongan_darah : ENUM(A,B,AB,O,tidak_diketahui)
+    alergi : TEXT
+    catatan_kulit : TEXT
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+  }
+}
+
+' =========================================
+' PACKAGE 3 - REGISTRASI & JADWAL
+' =========================================
+package "Registrasi dan Jadwal" {
+
+  class jadwal_dokter {
+    id : INT PK AI  ' <-- Diperbaiki
+    id_dokter : INT FK
+    hari : ENUM(senin,selasa,rabu,kamis,jumat,sabtu)
+    jam_mulai : TIME
+    jam_selesai : TIME
+    kuota : INT DEFAULT 20
+    is_aktif : TINYINT(1) DEFAULT 1
+    created_at : TIMESTAMP  ' <-- Ditambahkan
+    updated_at : TIMESTAMP  ' <-- Ditambahkan
+  }
+
+  class pendaftaran {
+    id : INT PK AI  ' <-- Diperbaiki
+    no_antrian : INT  ' <-- Diperbaiki ke INT (atau VARCHAR jika formatnya "A01")
+    id_pasien : INT FK
+    id_dokter : INT FK
+    id_layanan : INT FK
+    id_karyawan : INT FK
+    tanggal : DATE
+    keluhan_utama : TEXT
+    jenis_kunjungan : ENUM(baru,lama,kontrol)
+    status : ENUM(menunggu,dipanggil,selesai,batal)
+    catatan : TEXT
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+  }
+}
+
+' =========================================
+' PACKAGE 4 - RME (PMK No.24/2022)
+' =========================================
+package "Rekam Medis Elektronik" {
+
+  class rekam_medis {
+    id : INT PK AI  ' <-- Diperbaiki
+    id_pendaftaran : INT FK UNIQUE
+    id_pasien : INT FK
+    id_dokter : INT FK
+    id_diagnosa_utama : INT FK
+    id_diagnosa_sekunder : INT FK NULL
+    subjektif : TEXT
+    objektif : TEXT
+    assesment : TEXT
+    plan : TEXT
+    kondisi_masuk : TEXT
+    kondisi_keluar : TEXT
+    instruksi_tindak_lanjut : TEXT
+    status : ENUM(draft,final,batal) DEFAULT draft  ' <-- Ditambahkan batal
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+  }
+
+  class resep {
+    id : INT PK AI  ' <-- Diperbaiki
+    id_rme : INT FK
+    catatan : TEXT
+    created_at : TIMESTAMP  ' <-- Ditambahkan
+    updated_at : TIMESTAMP  ' <-- Ditambahkan
+  }
+
+  class detail_resep {
+    id : INT PK AI  ' <-- Diperbaiki
+    id_resep : INT FK
+    id_produk : INT FK
+    jumlah : INT
+    dosis : VARCHAR(100)
+    aturan_pakai : VARCHAR(150)
+    keterangan : TEXT
+    created_at : TIMESTAMP  ' <-- Ditambahkan
+    updated_at : TIMESTAMP  ' <-- Ditambahkan
+  }
+
+  class tindakan_pasien {
+    id : INT PK AI  ' <-- Diperbaiki
+    id_rme : INT FK
+    id_layanan : INT FK
+    harga_saat_itu : DECIMAL(12,2)
+    keterangan : TEXT
+    created_at : TIMESTAMP  ' <-- Ditambahkan
+    updated_at : TIMESTAMP  ' <-- Ditambahkan
+  }
+}
+
+' =========================================
+' PACKAGE 5 - KASIR
+' =========================================
+package "Kasir dan Transaksi" {
+
+  class invoice {
+    id : INT PK AI  ' <-- Diperbaiki
+    no_invoice : VARCHAR(30) UNIQUE
+    id_pendaftaran : INT FK UNIQUE
+    id_karyawan : INT FK
+    subtotal : DECIMAL(12,2)
+    diskon : DECIMAL(12,2) DEFAULT 0
+    total : DECIMAL(12,2)
+    total_dibayar : DECIMAL(12,2) DEFAULT 0
+    status : ENUM(belum_bayar,lunas,batal) DEFAULT belum_bayar
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+  }
+
+  class detail_invoice {
+    id : INT PK AI  ' <-- Diperbaiki
+    id_invoice : INT FK
+    jenis : ENUM(layanan,produk,tindakan)
+    id_referensi : INT NULL
+    nama_item : VARCHAR(200)
+    qty : INT DEFAULT 1
+    harga_satuan : DECIMAL(12,2)
+    subtotal : DECIMAL(12,2)
+    created_at : TIMESTAMP  ' <-- Ditambahkan sesuai plan
+    updated_at : TIMESTAMP  ' <-- Ditambahkan sesuai plan
+  }
+
+  class pembayaran {
+    id : INT PK AI  ' <-- Diperbaiki
+    id_invoice : INT FK
+    id_karyawan : INT FK
+    metode : ENUM(tunai,transfer,qris,debit)
+    nominal : DECIMAL(12,2)
+    kembalian : DECIMAL(12,2) DEFAULT 0
+    waktu_bayar : DATETIME
+    catatan : TEXT
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP  ' <-- Ditambahkan sesuai plan
+  }
+}
+
+' =========================================
+' PACKAGE 6 - FOLLOW UP WA
+' =========================================
+package "Follow Up WhatsApp" {
+
+  class followup_wa {
+    id : INT PK AI  ' <-- Diperbaiki
+    id_pasien : INT FK
+    id_pendaftaran : INT FK
+    id_pengguna : INT FK
+    no_whatsapp : VARCHAR(20)
+    pesan : TEXT
+    wa_link : TEXT
+    jenis : ENUM(konfirmasi,pengingat,pascakunjungan,kontrol)
+    status : ENUM(draft,terkirim,batal) DEFAULT draft
+    created_at : TIMESTAMP
+    updated_at : TIMESTAMP
+  }
+
+}
+
+' =========================================
+' RELASI
+' =========================================
+
+pengguna "1" -- "0..1" dokter
+spesialisasi "1" -- "0..*" dokter
+
+dokter "1" -- "0..*" jadwal_dokter
+dokter "1" -- "0..*" pendaftaran
+pasien "1" -- "0..*" pendaftaran
+layanan "1" -- "0..*" pendaftaran
+pengguna "1" -- "0..*" pendaftaran : "id_karyawan"
+
+pendaftaran "1" -- "0..1" rekam_medis
+pendaftaran "1" -- "0..1" invoice
+pendaftaran "1" -- "0..*" followup_wa
+
+diagnosa "1" -- "0..*" rekam_medis : "id_diagnosa_utama"
+diagnosa "1" -- "0..*" rekam_medis : "id_diagnosa_sekunder"
+rekam_medis "1" -- "0..1" resep
+rekam_medis "1" -- "0..*" tindakan_pasien
+layanan "1" -- "0..*" tindakan_pasien
+
+resep "1" -- "1..*" detail_resep
+produk "1" -- "0..*" detail_resep
+
+invoice "1" -- "1..*" detail_invoice
+invoice "1" -- "0..*" pembayaran
+pengguna "1" -- "0..*" pembayaran : "id_karyawan"
+
+pasien "1" -- "0..*" followup_wa
+pengguna "1" -- "0..*" followup_wa
+
+@enduml
