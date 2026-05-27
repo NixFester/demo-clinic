@@ -38,8 +38,8 @@ export async function POST(req: NextRequest) {
     const wa_link = generateWALink(no_whatsapp, pesan);
 
     const data = {
-      id_pasien,
-      id_pendaftaran,
+      id_pasien: parseInt(id_pasien),
+      id_pendaftaran: parseInt(id_pendaftaran),
       id_pengguna: parseInt(session.user.id),
       no_whatsapp,
       pesan,

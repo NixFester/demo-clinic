@@ -10,7 +10,7 @@ interface DashboardStats {
   menunggu: number;
   dipanggil: number;
   selesai: number;
-  pendapatan: number;
+  total_pendapatan: number;
 }
 
 export default function AdminDashboard() {
@@ -37,13 +37,13 @@ export default function AdminDashboard() {
         menunggu,
         dipanggil,
         selesai,
-        pendapatan: laporanData.pendapatan || 0,
+        total_pendapatan: laporanData.total_pendapatan || 0,
       });
       setError('');
     } catch (err) {
       console.error('[AdminDashboard] Error:', err);
       setError('Gagal memuat data dashboard');
-      setStats({ total_antrian: 0, menunggu: 0, dipanggil: 0, selesai: 0, pendapatan: 0 });
+      setStats({ total_antrian: 0, menunggu: 0, dipanggil: 0, selesai: 0, total_pendapatan: 0 });
     } finally {
       setLoading(false);
     }
@@ -60,7 +60,7 @@ export default function AdminDashboard() {
     { title: 'Menunggu', value: stats?.menunggu ?? '-', icon: <Clock className="h-5 w-5" />, color: 'text-yellow-600 bg-yellow-50' },
     { title: 'Dipanggil', value: stats?.dipanggil ?? '-', icon: <Phone className="h-5 w-5" />, color: 'text-sky-600 bg-sky-50' },
     { title: 'Selesai', value: stats?.selesai ?? '-', icon: <CheckCircle className="h-5 w-5" />, color: 'text-green-600 bg-green-50' },
-    { title: 'Pendapatan Hari Ini', value: stats ? formatCurrency(stats.pendapatan) : '-', icon: <Wallet className="h-5 w-5" />, color: 'text-emerald-600 bg-emerald-50' },
+    { title: 'Pendapatan Hari Ini', value: stats ? formatCurrency(stats.total_pendapatan) : '-', icon: <Wallet className="h-5 w-5" />, color: 'text-emerald-600 bg-emerald-50' },
   ];
 
   return (

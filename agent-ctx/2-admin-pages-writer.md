@@ -5,7 +5,7 @@ All 18 admin page files have been successfully rewritten according to the detail
 
 ## Files Written
 
-1. **Admin Dashboard** (`/admin/dashboard/page.tsx`) - Auto-refresh every 30s, 5 stat cards (total, menunggu, dipanggil, selesai, pendapatan), fetches from /api/antrian and /api/laporan/harian
+1. **Admin Dashboard** (`/admin/dashboard/page.tsx`) - Auto-refresh every 30s, 5 stat cards (total, menunggu, dipanggil, selesai, total_pendapatan), fetches from /api/antrian and /api/laporan/harian
 2. **Admin Pengguna** (`/admin/pengguna/page.tsx`) - Table with Loader2 spinner, error messages, pagination, add/edit dialog with role select, toggle aktif
 3. **Admin Dokter** (`/admin/dokter/page.tsx`) - Two-step create (pengguna first, then dokter record), select existing pengguna, edit dialog, toggle aktif
 4. **Admin Layanan** (`/admin/layanan/page.tsx`) - Kategori select (kecantikan/medis/konsultasi), pagination, Loader2 spinner

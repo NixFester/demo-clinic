@@ -264,7 +264,7 @@ export function middleware(request: NextRequest) {
 
 | Fitur | Admin | Dokter | Karyawan |
 |---|:---:|:---:|:---:|
-| Laporan keuangan & pendapatan | ● | ○ | ▲ |
+| Laporan keuangan & total_pendapatan | ● | ○ | ▲ |
 | Laporan jumlah pasien | ● | ○ | ▲ |
 | Export PDF | ● | ○ | ● |
 
@@ -646,7 +646,7 @@ Ini sistem manajemen klinik kecantikan swasta skala kecil. Tim kecil (beberapa d
 
 - [ ] Laporan harian — filter by tanggal
 - [ ] Laporan bulanan — filter by bulan & tahun
-- [ ] Summary: total pasien, baru vs lama, total pendapatan, breakdown per metode bayar
+- [ ] Summary: total pasien, baru vs lama, total total_pendapatan, breakdown per metode bayar
 - [ ] Export PDF via @react-pdf/renderer
 
 ### 6.3 Struktur Folder Next.js
@@ -851,7 +851,7 @@ if (session.user.role === 'karyawan') {
 - **Badge status RME:** abu = draft, hijau = final, merah = batal
 - Semua form dengan **inline validation** (react-hook-form + zod)
 - Pagination sederhana, 15 item per halaman default
-- Dashboard tiap role tampilkan **ringkasan hari ini** saja (total antrian, menunggu, selesai, pendapatan)
+- Dashboard tiap role tampilkan **ringkasan hari ini** saja (total antrian, menunggu, selesai, total_pendapatan)
 - **Mobile responsive tapi prioritas desktop** — staff klinik pakai komputer/tablet
 - **Antrian polling** — `setInterval` tiap 30 detik (bukan lebih cepat) untuk hemat Vercel function invocations
 - **Stok warning** — alert kuning (bukan error merah) jika stok produk kurang dari yang diminta di resep

@@ -12,7 +12,7 @@ export async function GET(
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
-    const result = await callBridge("rme.show", { id: parseInt(id) });
+    const result = await callBridge("rme.getOrCreate", { id_pendaftaran: parseInt(id) });
     return NextResponse.json(result);
   } catch (error: unknown) {
     console.error("[API /rme/[id]] GET error:", error);
@@ -35,8 +35,10 @@ export async function PUT(
     }
 
     const { id } = await params;
+    console.log("[DEBUG] rme id from params:", id); // tambah ini
     const body = await req.json();
     console.log(`[API /rme/${id}] PUT updating RME`);
+    
     const result = await callBridge("rme.update", { ...body, id: parseInt(id) });
     return NextResponse.json(result);
   } catch (error: unknown) {

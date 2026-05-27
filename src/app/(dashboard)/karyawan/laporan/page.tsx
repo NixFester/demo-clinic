@@ -12,26 +12,26 @@ import { Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface LaporanHarian {
-  total_pendaftaran: number;
+  total_pasien: number;
   pasien_baru: number;
   pasien_lama: number;
   menunggu: number;
   dipanggil: number;
   selesai: number;
   batal: number;
-  pendapatan: number;
-  breakdown_metode?: Array<{
+  total_pendapatan: number;
+  per_metode?: Array<{
     metode_pembayaran: string;
     total: number;
   }>;
 }
 
 interface LaporanBulanan {
-  total_pendaftaran: number;
+  total_pasien: number;
   pasien_baru: number;
   pasien_lama: number;
-  pendapatan: number;
-  breakdown_metode?: Array<{
+  total_pendapatan: number;
+  per_metode?: Array<{
     metode_pembayaran: string;
     total: number;
   }>;
@@ -140,7 +140,7 @@ export default function KaryawanLaporanPage() {
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <div className="p-4 bg-blue-50 rounded-lg text-center">
                       <p className="text-sm text-gray-600">Total Pasien</p>
-                      <p className="text-2xl font-bold text-blue-700">{harianData.total_pendaftaran || 0}</p>
+                      <p className="text-2xl font-bold text-blue-700">{harianData.total_pasien || 0}</p>
                     </div>
                     <div className="p-4 bg-teal-50 rounded-lg text-center">
                       <p className="text-sm text-gray-600">Pasien Baru</p>
@@ -167,11 +167,11 @@ export default function KaryawanLaporanPage() {
                     </div>
                     <div className="p-4 bg-emerald-50 rounded-lg text-center">
                       <p className="text-sm text-gray-600">Pendapatan</p>
-                      <p className="text-xl font-bold text-emerald-700">{formatCurrency(harianData.pendapatan || 0)}</p>
+                      <p className="text-xl font-bold text-emerald-700">{formatCurrency(harianData.total_pendapatan || 0)}</p>
                     </div>
                   </div>
 
-                  {harianData.breakdown_metode && harianData.breakdown_metode.length > 0 && (
+                  {harianData.per_metode && harianData.per_metode.length > 0 && (
                     <Card>
                       <CardHeader><CardTitle className="text-sm">Breakdown Metode Pembayaran</CardTitle></CardHeader>
                       <CardContent>
@@ -183,7 +183,7 @@ export default function KaryawanLaporanPage() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {harianData.breakdown_metode.map((item, i) => (
+                            {harianData.per_metode.map((item, i) => (
                               <TableRow key={i}>
                                 <TableCell>{getMetodeLabel(item.metode_pembayaran)}</TableCell>
                                 <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
@@ -237,7 +237,7 @@ export default function KaryawanLaporanPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="p-4 bg-blue-50 rounded-lg text-center">
                       <p className="text-sm text-gray-600">Total Pasien</p>
-                      <p className="text-2xl font-bold text-blue-700">{bulananData.total_pendaftaran || 0}</p>
+                      <p className="text-2xl font-bold text-blue-700">{bulananData.total_pasien || 0}</p>
                     </div>
                     <div className="p-4 bg-teal-50 rounded-lg text-center">
                       <p className="text-sm text-gray-600">Pasien Baru</p>
@@ -249,11 +249,11 @@ export default function KaryawanLaporanPage() {
                     </div>
                     <div className="p-4 bg-emerald-50 rounded-lg text-center">
                       <p className="text-sm text-gray-600">Total Pendapatan</p>
-                      <p className="text-xl font-bold text-emerald-700">{formatCurrency(bulananData.pendapatan || 0)}</p>
+                      <p className="text-xl font-bold text-emerald-700">{formatCurrency(bulananData.total_pendapatan || 0)}</p>
                     </div>
                   </div>
 
-                  {bulananData.breakdown_metode && bulananData.breakdown_metode.length > 0 && (
+                  {bulananData.per_metode && bulananData.per_metode.length > 0 && (
                     <Card>
                       <CardHeader><CardTitle className="text-sm">Breakdown Metode Pembayaran</CardTitle></CardHeader>
                       <CardContent>
@@ -265,7 +265,7 @@ export default function KaryawanLaporanPage() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {bulananData.breakdown_metode.map((item, i) => (
+                            {bulananData.per_metode.map((item, i) => (
                               <TableRow key={i}>
                                 <TableCell>{getMetodeLabel(item.metode_pembayaran)}</TableCell>
                                 <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>

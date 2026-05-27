@@ -14,9 +14,9 @@ import { toast } from 'sonner';
 import { generateWALink, formatDateTime } from '@/lib/helpers';
 
 interface FollowUpItem {
-  id: number;
-  id_pasien: number;
-  id_pendaftaran: number;
+  id: string;
+  id_pasien: string;
+  id_pendaftaran: string ;
   nama_pasien: string;
   no_whatsapp: string;
   jenis_followup: string;
@@ -26,7 +26,8 @@ interface FollowUpItem {
 }
 
 interface PasienOption {
-  id: number;
+  id: string;
+  id_pendaftaran: string;
   nama_lengkap: string;
   no_whatsapp: string;
   no_rekam_medis: string;
@@ -68,8 +69,11 @@ export default function KaryawanFollowupPage() {
   const [pasienList, setPasienList] = useState<PasienOption[]>([]);
   const [form, setForm] = useState({
     id_pasien: '',
-    jenis_followup: 'konfirmasi',
+    id_pendaftaran: '',
+    no_whatsapp: '',
+    jenis: 'konfirmasi',
     pesan: '',
+    wa_link: '',
   });
 
   const fetchData = async (p = page) => {
@@ -102,9 +106,10 @@ export default function KaryawanFollowupPage() {
           seen.add(item.id_pasien);
           uniquePasien.push({
             id: item.id_pasien,
+            id_pendaftaran: item.id_pendaftaran,
             nama_lengkap: item.nama_pasien,
-            no_whatsapp: item.no_whatsapp_pasien || '',
-            no_rekam_medis: item.no_rekam_medis || '',
+            no_whatsapp: item.no_whatsapp,
+            no_rekam_medis: item.no_rekam_medis,
           });
         }
       }
@@ -132,22 +137,29 @@ export default function KaryawanFollowupPage() {
   useEffect(() => { fetchData(); fetchPasienToday(); }, [page]);
 
   const handleJenisChange = (jenis: string) => {
-    const pasien = pasienList.find(p => p.id === parseInt(form.id_pasien));
+    const pasien = pasienList.find(p => p.id === form.id_pasien);
     const nama = pasien?.nama_lengkap || '{nama}';
     const template = messageTemplates[jenis]?.replace('{nama}', nama) || '';
-    setForm({ ...form, jenis_followup: jenis, pesan: template });
+    console.log(form);
+    setForm({ ...form, jenis: jenis, pesan: template });
   };
 
   const handlePasienChange = (id: string) => {
-    const pasien = pasienList.find(p => p.id === parseInt(id));
+    const pasien = pasienList.find(p => p.id === id);
     const nama = pasien?.nama_lengkap || '{nama}';
-    const template = messageTemplates[form.jenis_followup]?.replace('{nama}', nama) || form.pesan;
-    setForm({ ...form, id_pasien: id, pesan: template });
+    console.log('Selected pasien:', pasien);
+    if (!pasien) {
+      setForm({ ...form, id_pasien: id, id_pendaftaran: '', no_whatsapp: '', pesan: '', wa_link: '' });
+      return;
+    }
+    const template = messageTemplates[form.jenis]?.replace('{nama}', nama) || form.pesan;
+    setForm({ ...form, id_pasien: id, id_pendaftaran: pasien.id_pendaftaran, no_whatsapp: pasien.no_whatsapp, pesan: template, wa_link: generateWALink(pasien.no_whatsapp, template) });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
+    console.log('Submitting follow-up with data:', form);
     try {
       const res = await fetch('/api/followup', {
         method: 'POST',
@@ -157,7 +169,7 @@ export default function KaryawanFollowupPage() {
       if (!res.ok) throw new Error();
       toast.success('Follow-up berhasil dibuat');
       setDialogOpen(false);
-      setForm({ id_pasien: '', jenis_followup: 'konfirmasi', pesan: '' });
+      setForm({ id_pendaftaran: '', id_pasien: '', no_whatsapp: '', jenis: 'konfirmasi', pesan: '', wa_link: '' });
       fetchData();
     } catch (err) {
       toast.error('Gagal membuat follow-up');
@@ -166,7 +178,7 @@ export default function KaryawanFollowupPage() {
     }
   };
 
-  const handleMarkSent = async (id: number) => {
+  const handleMarkSent = async (id: string) => {
     try {
       await fetch(`/api/followup/${id}/terkirim`, { method: 'PATCH' });
       toast.success('Follow-up ditandai terkirim');
@@ -192,7 +204,7 @@ export default function KaryawanFollowupPage() {
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <Button
             onClick={() => {
-              setForm({ id_pasien: '', jenis_followup: 'konfirmasi', pesan: '' });
+              setForm({ id_pendaftaran: '', id_pasien: '', no_whatsapp: '', jenis: 'konfirmasi', pesan: '', wa_link: '' });
               fetchPasienToday();
               setDialogOpen(true);
             }}
@@ -217,7 +229,7 @@ export default function KaryawanFollowupPage() {
               </div>
               <div className="space-y-2">
                 <Label>Jenis Follow-up</Label>
-                <select value={form.jenis_followup} onChange={(e) => handleJenisChange(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                <select value={form.jenis} onChange={(e) => handleJenisChange(e.target.value)} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                   {jenisOptions.map(j => (
                     <option key={j.value} value={j.value}>{j.label}</option>
                   ))}
@@ -231,7 +243,7 @@ export default function KaryawanFollowupPage() {
                 <div className="p-3 bg-green-50 rounded-lg">
                   <p className="text-xs text-green-600 mb-2">Pratinjau tautan WhatsApp:</p>
                   <a
-                    href={generateWALink(pasienList.find(p => p.id === parseInt(form.id_pasien))?.no_whatsapp || '', form.pesan)}
+                    href={generateWALink(form.no_whatsapp || '', form.pesan)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm text-green-700 underline break-all"

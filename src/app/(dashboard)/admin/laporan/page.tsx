@@ -9,30 +9,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency, getTodayISO } from '@/lib/helpers';
 import { Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface LaporanHarian {
-  total_pendaftaran: number;
+  total_pasien: number;
   pasien_baru: number;
   pasien_lama: number;
   menunggu: number;
   dipanggil: number;
   selesai: number;
   batal: number;
-  pendapatan: number;
-  breakdown_metode?: Array<{
-    metode_pembayaran: string;
+  total_pendapatan: number;
+  per_metode?: Array<{
+    metode: string;
     total: number;
   }>;
 }
 
 interface LaporanBulanan {
-  total_pendaftaran: number;
+  total_pasien: number;
   pasien_baru: number;
   pasien_lama: number;
-  pendapatan: number;
-  breakdown_metode?: Array<{
-    metode_pembayaran: string;
+  total_pendapatan: number;
+  per_metode?: Array<{
+    metode: string;
     total: number;
   }>;
 }
@@ -85,8 +86,149 @@ export default function LaporanPage() {
 
   useEffect(() => { fetchHarian(); }, []);
 
-  const handleExport = () => {
-    toast.info('Fitur export akan segera tersedia');
+  const styles = StyleSheet.create({
+    page: { padding: 20, fontSize: 12, fontFamily: 'Helvetica' },
+    header: { marginBottom: 10 },
+    title: { fontSize: 16, marginBottom: 8 },
+    row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+    tableHeader: { flexDirection: 'row', marginTop: 8, borderBottomWidth: 1, paddingBottom: 4 },
+    tableCell: { flex: 1 },
+  });
+
+  const createHarianDoc = (data: LaporanHarian | null, tanggalStr: string) => (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Laporan Harian - {tanggalStr}</Text>
+        </View>
+        {data ? (
+          <>
+            <View style={styles.row}>
+              <Text>Total Pasien</Text>
+              <Text>{data.total_pasien || 0}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text>Pasien Baru</Text>
+              <Text>{data.pasien_baru || 0}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text>Pasien Lama</Text>
+              <Text>{data.pasien_lama || 0}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text>Selesai</Text>
+              <Text>{data.selesai || 0}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text>Pendapatan</Text>
+              <Text>{formatCurrency(data.total_pendapatan || 0)}</Text>
+            </View>
+
+            {data.per_metode && data.per_metode.length > 0 && (
+              <>
+                <View style={styles.tableHeader}>
+                  <Text style={styles.tableCell}>Metode</Text>
+                  <Text style={styles.tableCell}>Total</Text>
+                </View>
+                {data.per_metode.map((m, i) => (
+                  <View style={styles.row} key={i}>
+                    <Text>{getMetodeLabel(m.metode)}</Text>
+                    <Text>{formatCurrency(m.total)}</Text>
+                  </View>
+                ))}
+              </>
+            )}
+          </>
+        ) : (
+          <Text>Tidak ada data</Text>
+        )}
+      </Page>
+    </Document>
+  );
+
+  const createBulananDoc = (data: LaporanBulanan | null, bulanStr: string, tahunStr: string) => (
+    <Document>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Laporan Bulanan - {bulanStr} {tahunStr}</Text>
+        </View>
+        {data ? (
+          <>
+            <View style={styles.row}>
+              <Text>Total Pasien</Text>
+              <Text>{data.total_pasien || 0}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text>Pasien Baru</Text>
+              <Text>{data.pasien_baru || 0}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text>Pasien Lama</Text>
+              <Text>{data.pasien_lama || 0}</Text>
+            </View>
+            <View style={styles.row}>
+              <Text>Total Pendapatan</Text>
+              <Text>{formatCurrency(data.total_pendapatan || 0)}</Text>
+            </View>
+
+            {data.per_metode && data.per_metode.length > 0 && (
+              <>
+                <View style={styles.tableHeader}>
+                  <Text style={styles.tableCell}>Metode</Text>
+                  <Text style={styles.tableCell}>Total</Text>
+                </View>
+                {data.per_metode.map((m, i) => (
+                  <View style={styles.row} key={i}>
+                    <Text>{getMetodeLabel(m.metode)}</Text>
+                    <Text>{formatCurrency(m.total)}</Text>
+                  </View>
+                ))}
+              </>
+            )}
+          </>
+        ) : (
+          <Text>Tidak ada data</Text>
+        )}
+      </Page>
+    </Document>
+  );
+
+  const handleExport = async () => {
+    try {
+      if (activeTab === 'harian') {
+        if (!harianData) { toast.info('Tidak ada data harian untuk diexport'); return; }
+        const doc = createHarianDoc(harianData, tanggal);
+        const asPdf = pdf(doc);
+        const blob = await asPdf.toBlob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `laporan-harian-${tanggal}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success('Export PDF harian dimulai');
+      } else {
+        if (!bulananData) { toast.info('Tidak ada data bulanan untuk diexport'); return; }
+        const bulanLabel = bulanOptions.find(b => b.value === bulan)?.label || bulan;
+        const doc = createBulananDoc(bulananData, bulanLabel, tahun);
+        const asPdf = pdf(doc);
+        const blob = await asPdf.toBlob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `laporan-bulanan-${bulan}-${tahun}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success('Export PDF bulanan dimulai');
+      }
+    } catch (err) {
+      console.error('[LaporanPage] export error:', err);
+      toast.error('Gagal mengekspor PDF');
+    }
   };
 
   const getMetodeLabel = (metode: string) => {
@@ -140,7 +282,7 @@ export default function LaporanPage() {
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     <div className="p-4 bg-blue-50 rounded-lg text-center">
                       <p className="text-sm text-gray-600">Total Pasien</p>
-                      <p className="text-2xl font-bold text-blue-700">{harianData.total_pendaftaran || 0}</p>
+                      <p className="text-2xl font-bold text-blue-700">{harianData.total_pasien || 0}</p>
                     </div>
                     <div className="p-4 bg-teal-50 rounded-lg text-center">
                       <p className="text-sm text-gray-600">Pasien Baru</p>
@@ -156,11 +298,11 @@ export default function LaporanPage() {
                     </div>
                     <div className="p-4 bg-emerald-50 rounded-lg text-center">
                       <p className="text-sm text-gray-600">Pendapatan</p>
-                      <p className="text-xl font-bold text-emerald-700">{formatCurrency(harianData.pendapatan || 0)}</p>
+                      <p className="text-xl font-bold text-emerald-700">{formatCurrency(harianData.total_pendapatan || 0)}</p>
                     </div>
                   </div>
 
-                  {harianData.breakdown_metode && harianData.breakdown_metode.length > 0 && (
+                  {harianData.per_metode && harianData.per_metode.length > 0 && (
                     <Card>
                       <CardHeader><CardTitle className="text-sm">Breakdown Metode Pembayaran</CardTitle></CardHeader>
                       <CardContent>
@@ -172,9 +314,9 @@ export default function LaporanPage() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {harianData.breakdown_metode.map((item, i) => (
+                            {harianData.per_metode.map((item, i) => (
                               <TableRow key={i}>
-                                <TableCell>{getMetodeLabel(item.metode_pembayaran)}</TableCell>
+                                <TableCell>{getMetodeLabel(item.metode)}</TableCell>
                                 <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
                               </TableRow>
                             ))}
@@ -226,7 +368,7 @@ export default function LaporanPage() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="p-4 bg-blue-50 rounded-lg text-center">
                       <p className="text-sm text-gray-600">Total Pasien</p>
-                      <p className="text-2xl font-bold text-blue-700">{bulananData.total_pendaftaran || 0}</p>
+                      <p className="text-2xl font-bold text-blue-700">{bulananData.total_pasien || 0}</p>
                     </div>
                     <div className="p-4 bg-teal-50 rounded-lg text-center">
                       <p className="text-sm text-gray-600">Pasien Baru</p>
@@ -238,11 +380,11 @@ export default function LaporanPage() {
                     </div>
                     <div className="p-4 bg-emerald-50 rounded-lg text-center">
                       <p className="text-sm text-gray-600">Total Pendapatan</p>
-                      <p className="text-xl font-bold text-emerald-700">{formatCurrency(bulananData.pendapatan || 0)}</p>
+                      <p className="text-xl font-bold text-emerald-700">{formatCurrency(bulananData.total_pendapatan || 0)}</p>
                     </div>
                   </div>
 
-                  {bulananData.breakdown_metode && bulananData.breakdown_metode.length > 0 && (
+                  {bulananData.per_metode && bulananData.per_metode.length > 0 && (
                     <Card>
                       <CardHeader><CardTitle className="text-sm">Breakdown Metode Pembayaran</CardTitle></CardHeader>
                       <CardContent>
@@ -254,9 +396,9 @@ export default function LaporanPage() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {bulananData.breakdown_metode.map((item, i) => (
+                            {bulananData.per_metode.map((item, i) => (
                               <TableRow key={i}>
-                                <TableCell>{getMetodeLabel(item.metode_pembayaran)}</TableCell>
+                                <TableCell>{getMetodeLabel(item.metode)}</TableCell>
                                 <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
                               </TableRow>
                             ))}

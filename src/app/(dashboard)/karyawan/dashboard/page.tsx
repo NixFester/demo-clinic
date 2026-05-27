@@ -12,7 +12,7 @@ interface DashboardStats {
   dipanggil: number;
   selesai: number;
   invoice_menunggu: number;
-  pendapatan: number;
+  total_pendapatan: number;
 }
 
 export default function KaryawanDashboard() {
@@ -45,13 +45,13 @@ export default function KaryawanDashboard() {
         dipanggil,
         selesai,
         invoice_menunggu: invoiceList.length,
-        pendapatan: laporanData.pendapatan || 0,
+        total_pendapatan: laporanData.total_pendapatan || 0,
       });
       setError('');
     } catch (err) {
       console.error('[KaryawanDashboard] Error:', err);
       setError('Gagal memuat data dashboard');
-      setStats({ total_antrian: 0, menunggu: 0, dipanggil: 0, selesai: 0, invoice_menunggu: 0, pendapatan: 0 });
+      setStats({ total_antrian: 0, menunggu: 0, dipanggil: 0, selesai: 0, invoice_menunggu: 0, total_pendapatan: 0 });
     } finally {
       setLoading(false);
     }
@@ -69,7 +69,7 @@ export default function KaryawanDashboard() {
     { title: 'Dipanggil', value: stats?.dipanggil ?? '-', icon: <Phone className="h-5 w-5" />, color: 'text-sky-600 bg-sky-50' },
     { title: 'Selesai', value: stats?.selesai ?? '-', icon: <CheckCircle className="h-5 w-5" />, color: 'text-green-600 bg-green-50' },
     { title: 'Invoice Menunggu Bayar', value: stats?.invoice_menunggu ?? '-', icon: <FileText className="h-5 w-5" />, color: 'text-orange-600 bg-orange-50' },
-    { title: 'Pendapatan Hari Ini', value: stats ? formatCurrency(stats.pendapatan) : '-', icon: <Wallet className="h-5 w-5" />, color: 'text-emerald-600 bg-emerald-50' },
+    { title: 'Pendapatan Hari Ini', value: stats ? formatCurrency(stats.total_pendapatan) : '-', icon: <Wallet className="h-5 w-5" />, color: 'text-emerald-600 bg-emerald-50' },
   ];
 
   return (

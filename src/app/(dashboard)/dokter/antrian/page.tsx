@@ -102,7 +102,7 @@ export default function DokterAntrianPage() {
   };
 
   const handleBuatRME = (idPendaftaran: number) => {
-    router.push(`/dokter/rme/buat/${idPendaftaran}`);
+    router.push(`/dokter/rme/${idPendaftaran}`);
   };
 
   return (
@@ -113,7 +113,7 @@ export default function DokterAntrianPage() {
           <h1 className="text-2xl font-bold">Antrian Saya Hari Ini</h1>
           <p className="text-sm text-gray-500">Auto-refresh setiap 30 detik</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+        <Button variant="outline" size="sm" onClick={fetchData} >
           {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
           Refresh
         </Button>

@@ -167,7 +167,7 @@ export default function RMEBuatPage() {
       const items = result.data || [];
       const found = items.find(
         (a: { id: number; id_pendaftaran?: number }) =>
-          a.id === parseInt(idPendaftaran) || a.id_pendaftaran === parseInt(idPendaftaran)
+          a.id == parseInt(idPendaftaran) || a.id_pendaftaran == parseInt(idPendaftaran)
       );
       if (found) {
         setPendaftaran(found);
@@ -231,7 +231,7 @@ export default function RMEBuatPage() {
   }, [diagQuery]);
 
   const handleSelectDiagnosa = (d: DiagnosaOption) => {
-    if (diagTarget === 'utama') {
+    if (diagTarget == 'utama') {
       setSelectedDiagUtama(d);
       setIdDiagnosaUtama(d.id);
     } else {
@@ -313,7 +313,7 @@ export default function RMEBuatPage() {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Gagal menambah tindakan');
 
-      const layanan = tindakanList.find((l) => l.id === parseInt(selectedLayanan));
+      const layanan = tindakanList.find((l) => l.id == parseInt(selectedLayanan));
       setTindakanItems((prev) => [
         ...prev,
         {
@@ -344,7 +344,7 @@ export default function RMEBuatPage() {
     setAddingResep(true);
     setStockWarning('');
 
-    const produk = produkList.find((p) => p.id === parseInt(selectedProduk));
+    const produk = produkList.find((p) => p.id == parseInt(selectedProduk));
     const qty = parseInt(resepJumlah) || 1;
 
     if (produk && qty > produk.stok) {
@@ -575,10 +575,10 @@ export default function RMEBuatPage() {
                   className="pl-9"
                   onFocus={() => setDiagTarget('utama')}
                 />
-                {diagLoading && diagTarget === 'utama' && (
+                {diagLoading && diagTarget == 'utama' && (
                   <p className="text-xs text-gray-500 mt-1">Mencari...</p>
                 )}
-                {diagResults.length > 0 && diagTarget === 'utama' && !selectedDiagUtama && (
+                {diagResults.length > 0 && diagTarget == 'utama' && !selectedDiagUtama && (
                   <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {diagResults.map((d) => (
                       <button
@@ -622,7 +622,7 @@ export default function RMEBuatPage() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   placeholder="Cari diagnosa sekunder ICD-10 (opsional)..."
-                  value={diagTarget === 'sekunder' ? diagQuery : ''}
+                  value={diagTarget == 'sekunder' ? diagQuery : ''}
                   onChange={(e) => {
                     setDiagQuery(e.target.value);
                     setDiagTarget('sekunder');
@@ -630,10 +630,10 @@ export default function RMEBuatPage() {
                   className="pl-9"
                   onFocus={() => setDiagTarget('sekunder')}
                 />
-                {diagLoading && diagTarget === 'sekunder' && (
+                {diagLoading && diagTarget == 'sekunder' && (
                   <p className="text-xs text-gray-500 mt-1">Mencari...</p>
                 )}
-                {diagResults.length > 0 && diagTarget === 'sekunder' && !selectedDiagSekunder && (
+                {diagResults.length > 0 && diagTarget == 'sekunder' && !selectedDiagSekunder && (
                   <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                     {diagResults.map((d) => (
                       <button

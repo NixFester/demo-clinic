@@ -5,7 +5,7 @@ Created all 13 karyawan page files with full standalone implementations. Previou
 
 ## Files Created/Modified
 
-1. **Dashboard** (`/karyawan/dashboard/page.tsx`) - Stats cards: total antrian, menunggu, dipanggil, selesai, invoice menunggu bayar, pendapatan. Auto-refresh 30s.
+1. **Dashboard** (`/karyawan/dashboard/page.tsx`) - Stats cards: total antrian, menunggu, dipanggil, selesai, invoice menunggu bayar, total_pendapatan. Auto-refresh 30s.
 
 2. **Antrian** (`/karyawan/antrian/page.tsx`) - Table with No Antrian, Pasien, Dokter, Layanan, Status, Aksi. Status update buttons (Panggil/Selesai). Link to Buat Pendaftaran. Auto-refresh 30s.
 
@@ -29,7 +29,7 @@ Created all 13 karyawan page files with full standalone implementations. Previou
 
 12. **Katalog Jadwal** (`/karyawan/katalog/jadwal/page.tsx`) - Full CRUD with dokter dropdown. Table with Dokter, Hari, Jam Mulai, Jam Selesai, Kuota, Status, Aksi.
 
-13. **Laporan** (`/karyawan/laporan/page.tsx`) - Tabs: Harian (date picker), Bulanan (month/year picker). Stats: total pasien, baru vs lama, pendapatan. Breakdown metode pembayaran.
+13. **Laporan** (`/karyawan/laporan/page.tsx`) - Tabs: Harian (date picker), Bulanan (month/year picker). Stats: total pasien, baru vs lama, total_pendapatan. Breakdown metode pembayaran.
 
 ## Key Features
 - All pages are `'use client'` components

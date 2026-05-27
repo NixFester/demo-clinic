@@ -11,13 +11,6 @@ import { ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
 
-interface TindakanItem {
-  id: number;
-  nama_layanan: string;
-  harga_saat_itu: number;
-  keterangan: string;
-}
-
 interface ResepItem {
   id: number;
   nama_produk: string;
@@ -29,32 +22,40 @@ interface ResepItem {
 
 interface PembayaranItem {
   id: number;
-  jumlah_bayar: number;
-  metode_pembayaran: string;
+  nominal: number;
+  metode: string;
+  kembalian: number;
   created_at: string;
 }
 
 interface InvoiceData {
   id: number;
   no_invoice: string;
-  total: number;
+  id_pendaftaran: number;
+  id_karyawan: number;
   subtotal: number;
-  diskon_persen: number;
-  diskon_nominal: number;
-  dibayar: number;
+  diskon: number;
+  total: number;
+  total_dibayar: number;
   status: string;
   created_at: string;
-  batas_diskon_karyawan?: number;
+  updated_at: string;
   nama_pasien?: string;
   no_rekam_medis?: string;
+  alamat_pasien?: string;
+  no_whatsapp: string;
+  nama_karyawan?: string;
   nama_dokter?: string;
-  nama_layanan?: string;
-  harga_layanan?: number;
-  tindakan?: TindakanItem[];
-  resep?: {
+  items : {
     id: number;
-    items: ResepItem[];
-  } | null;
+    id_invoice: number;
+    id_referensi: number;
+    jenis: string;
+    nama_item?: string;
+    qty?: number;
+    harga_satuan?: number;
+    subtotal?: number;
+  }[];
   pembayaran?: PembayaranItem[];
 }
 
@@ -109,11 +110,6 @@ export default function KaryawanKasirDetailPage() {
   const handleApplyDiskon = async () => {
     if (!diskonPersen) return;
     const persen = parseFloat(diskonPersen);
-    const batas = invoice?.batas_diskon_karyawan || 0;
-    if (batas > 0 && persen > batas) {
-      toast.error(`Diskon maksimal untuk karyawan adalah ${batas}%`);
-      return;
-    }
     setApplyingDiskon(true);
     try {
       const res = await fetch(`/api/invoice/${id}/diskon`, {
@@ -154,7 +150,7 @@ export default function KaryawanKasirDetailPage() {
   };
 
   const totalPayments = payments.reduce((sum, p) => sum + (parseFloat(p.jumlah) || 0), 0);
-  const sisaTagihan = invoice ? invoice.total - (invoice.dibayar || 0) : 0;
+  const sisaTagihan = invoice ? invoice.total - (invoice.subtotal || 0) : 0;
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,8 +163,9 @@ export default function KaryawanKasirDetailPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id_invoice: invoice!.id,
-            jumlah_bayar: parseFloat(payment.jumlah),
-            metode_pembayaran: payment.metode,
+            nominal: parseFloat(payment.jumlah),
+            metode: payment.metode,
+            kembalian: payment.metode === 'tunai' ? (parseFloat(nominalDiterima) - sisaTagihan) : 0,
           }),
         });
         if (!res.ok) {
@@ -227,7 +224,7 @@ export default function KaryawanKasirDetailPage() {
         </Button>
         <div className="flex-1">
           <h1 className="text-2xl font-bold">Detail Invoice</h1>
-          <p className="text-sm text-gray-500">{invoice.no_invoice} | {invoice.nama_pasien} | {formatDateTime(invoice.created_at)}</p>
+          <p className="text-sm text-gray-500">{invoice.no_invoice} | {invoice.nama_pasien} | {formatDateTime(invoice.created_at)} | {invoice.no_rekam_medis}</p>
         </div>
         {getStatusBadge(invoice.status)}
       </div>
@@ -236,24 +233,34 @@ export default function KaryawanKasirDetailPage() {
       <Card>
         <CardHeader><CardTitle className="text-base">Detail Item</CardTitle></CardHeader>
         <CardContent className="space-y-2">
-          {invoice.nama_layanan && (
-            <div className="flex justify-between py-2 border-b">
-              <span>{invoice.nama_layanan} (Layanan Utama)</span>
-              <span>{formatCurrency(invoice.harga_layanan || 0)}</span>
+          {invoice.items.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">Tidak ada item pada invoice ini</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="px-4 py-2">Nama Item</th>
+                    <th className="px-4 py-2">Jenis</th>
+                    <th className="px-4 py-2">Jumlah</th>
+                    <th className="px-4 py-2">Harga Satuan</th>
+                    <th className="px-4 py-2">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {invoice.items.map(item => (
+                    <tr key={item.id} className="border-t">
+                      <td className="px-4 py-2">{item.nama_item || '-'}</td>
+                      <td className="px-4 py-2">{item.jenis}</td>
+                      <td className="px-4 py-2">{item.qty ?? '-'}</td>
+                      <td className="px-4 py-2">{item.harga_satuan !== undefined ? formatCurrency(item.harga_satuan) : '-'}</td>
+                      <td className="px-4 py-2">{item.subtotal !== undefined ? formatCurrency(item.subtotal) : '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
-          {invoice.tindakan?.map((t) => (
-            <div key={t.id} className="flex justify-between py-2 border-b">
-              <span>{t.nama_layanan} (Tindakan)</span>
-              <span>{formatCurrency(t.harga_saat_itu)}</span>
-            </div>
-          ))}
-          {invoice.resep?.items.map((item) => (
-            <div key={item.id} className="flex justify-between py-2 border-b">
-              <span>{item.nama_produk} x{item.jumlah} (Resep)</span>
-              <span>{formatCurrency(item.harga_jual * item.jumlah)}</span>
-            </div>
-          ))}
         </CardContent>
       </Card>
 
@@ -265,21 +272,21 @@ export default function KaryawanKasirDetailPage() {
             <span>Subtotal</span>
             <span>{formatCurrency(invoice.subtotal || 0)}</span>
           </div>
-          {(invoice.diskon_persen || 0) > 0 && (
+          {(invoice.diskon || 0) > 0 && (
             <div className="flex justify-between text-sm text-yellow-600">
-              <span>Diskon ({invoice.diskon_persen}%)</span>
-              <span>-{formatCurrency(invoice.diskon_nominal || 0)}</span>
+              <span>Diskon ({invoice.diskon}%)</span>
+              <span>-{formatCurrency(invoice.diskon || 0)}</span>
             </div>
           )}
           <div className="flex justify-between font-bold text-lg border-t pt-2">
             <span>Total</span>
             <span>{formatCurrency(invoice.total || 0)}</span>
           </div>
-          {(invoice.dibayar || 0) > 0 && (
+          {(invoice.subtotal || 0) > 0 && (
             <>
               <div className="flex justify-between text-sm text-emerald-600">
                 <span>Sudah Dibayar</span>
-                <span>{formatCurrency(invoice.dibayar || 0)}</span>
+                <span>{formatCurrency(invoice.subtotal || 0)}</span>
               </div>
               <div className="flex justify-between font-medium text-red-600">
                 <span>Sisa Tagihan</span>
@@ -299,8 +306,11 @@ export default function KaryawanKasirDetailPage() {
               {invoice.pembayaran.map((p) => (
                 <div key={p.id} className="flex justify-between py-2 border-b last:border-0">
                   <div>
-                    <span className="font-medium">{formatCurrency(p.jumlah_bayar)}</span>
-                    <span className="text-sm text-gray-500 ml-2">({p.metode_pembayaran})</span>
+                    <span className="font-medium">{formatCurrency(p.nominal)}</span>
+                    <span className="text-sm text-gray-500 ml-2">({p.metode})</span>
+                    <span className={`text-sm ml-2 ${p.kembalian >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {p.kembalian >= 0 ? `Kembalian: ${formatCurrency(p.kembalian)}` : `Kurang: ${formatCurrency(-p.kembalian)}`}
+                    </span>
                   </div>
                   <span className="text-sm text-gray-500">{formatDateTime(p.created_at)}</span>
                 </div>
@@ -315,16 +325,13 @@ export default function KaryawanKasirDetailPage() {
         <Card>
           <CardHeader><CardTitle className="text-base">Terapkan Diskon</CardTitle></CardHeader>
           <CardContent>
-            {invoice.batas_diskon_karyawan !== undefined && invoice.batas_diskon_karyawan > 0 && (
-              <p className="text-xs text-gray-500 mb-2">Batas diskon karyawan: maksimal {invoice.batas_diskon_karyawan}%</p>
-            )}
             <div className="flex gap-3 items-end">
               <div className="space-y-2 flex-1">
                 <Label>Diskon (%)</Label>
                 <Input
                   type="number"
                   min="0"
-                  max={invoice.batas_diskon_karyawan || 100}
+                  max="100"
                   value={diskonPersen}
                   onChange={(e) => setDiskonPersen(e.target.value)}
                   placeholder="0"
