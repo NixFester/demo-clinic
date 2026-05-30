@@ -32,14 +32,13 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id_pasien, id_pendaftaran, no_whatsapp, pesan, jenis } = body;
+    const { id_pasien, no_whatsapp, pesan, jenis } = body;
 
     // Generate wa.me link
     const wa_link = generateWALink(no_whatsapp, pesan);
 
     const data = {
       id_pasien: parseInt(id_pasien),
-      id_pendaftaran: parseInt(id_pendaftaran),
       id_pengguna: parseInt(session.user.id),
       no_whatsapp,
       pesan,
@@ -49,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`[API /followup] Creating follow-up WA for pasien: ${id_pasien}`);
     const result = await callBridge("followup.store", data);
-    return NextResponse.json({ ...result, wa_link }, { status: 201 });
+    return NextResponse.json({ ...(result && typeof result === "object" ? result : {}), wa_link }, { status: 201 });
   } catch (error: unknown) {
     console.error("[API /followup] POST error:", error);
     return NextResponse.json(

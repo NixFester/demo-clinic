@@ -8,52 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
-
-interface TindakanItem {
-  id: number;
-  nama_layanan: string;
-  harga_saat_itu: number;
-  keterangan: string;
-}
-
-interface ResepItem {
-  id: number;
-  nama_produk: string;
-  jumlah: number;
-  dosis: string;
-  aturan_pakai: string;
-  keterangan: string;
-  harga_jual: number;
-  stok: number;
-}
-
-interface RMEDetail {
-  id: number;
-  id_pendaftaran: number;
-  id_pasien: number;
-  id_dokter: number;
-  status: string;
-  nama_pasien: string;
-  no_rekam_medis: string;
-  nama_dokter: string;
-  subjektif: string;
-  objektif: string;
-  assesment: string;
-  plan: string;
-  kondisi_masuk: string;
-  kondisi_keluar: string;
-  instruksi_tindak_lanjut: string;
-  kode_diagnosa_utama: string;
-  nama_diagnosa_utama: string;
-  kode_diagnosa_sekunder: string;
-  nama_diagnosa_sekunder: string;
-  created_at: string;
-  tindakan: TindakanItem[];
-  resep: {
-    id: number;
-    items: ResepItem[];
-  } | null;
-}
+import { RMEDetail } from '@/types/api-items';
 
 export default function RMEDetailPage() {
   const params = useParams();
@@ -106,7 +61,7 @@ export default function RMEDetailPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">RME - {rme.nama_pasien}</h1>
-            <p className="text-sm text-gray-500">No. RM: {rme.no_rekam_medis} | Dokter: {rme.nama_dokter} | {formatDateTime(rme.created_at)}</p>
+            <p className="text-sm text-gray-500">No. RM: {rme.no_rekam_medis} | Dokter: {rme.nama_dokter} | {(rme.updated_at && formatDateTime(rme.updated_at))}</p>
           </div>
         </div>
         <StatusBadge status={rme.status} />

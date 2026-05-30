@@ -15,7 +15,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
         className
       )}
     >
-      {status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, " ")}
+      {status}
     </span>
   );
 }

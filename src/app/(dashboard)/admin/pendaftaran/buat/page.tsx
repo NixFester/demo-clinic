@@ -10,8 +10,8 @@ import { PasienSearch } from '@/components/shared/PasienSearch';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import { Loader2, ArrowLeft, ArrowRight, UserPlus } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface DokterOption {
   id: number;
@@ -41,8 +41,6 @@ export default function PendaftaranBuatPage() {
   const [layananList, setLayananList] = useState<LayananOption[]>([]);
   const [selectedPasien, setSelectedPasien] = useState<PasienOption>({});
   const [loading, setLoading] = useState(false);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [creatingPasien, setCreatingPasien] = useState(false);
 
   const [form, setForm] = useState({
     id_dokter: '',
@@ -50,16 +48,6 @@ export default function PendaftaranBuatPage() {
     keluhan_utama: '',
     jenis_kunjungan: 'baru',
     catatan: '',
-  });
-
-  const [newPasienForm, setNewPasienForm] = useState({
-    nama_lengkap: '',
-    nik: '',
-    tanggal_lahir: '',
-    jenis_kelamin: 'L',
-    alamat: '',
-    no_telepon: '',
-    no_whatsapp: '',
   });
 
   useEffect(() => {
@@ -80,27 +68,6 @@ export default function PendaftaranBuatPage() {
     fetchOptions();
   }, []);
 
-  const handleCreatePasien = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCreatingPasien(true);
-    try {
-      const res = await fetch('/api/pasien', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newPasienForm),
-      });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.error || 'Gagal membuat pasien');
-      setSelectedPasien({ id: result.data?.id || result.id, nama_lengkap: newPasienForm.nama_lengkap });
-      setCreateDialogOpen(false);
-      toast.success('Pasien baru berhasil didaftarkan');
-      setNewPasienForm({ nama_lengkap: '', nik: '', tanggal_lahir: '', jenis_kelamin: 'L', alamat: '', no_telepon: '', no_whatsapp: '' });
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Gagal membuat pasien');
-    } finally {
-      setCreatingPasien(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,11 +144,13 @@ export default function PendaftaranBuatPage() {
                 <span className="bg-white px-2 text-gray-500">atau</span>
               </div>
             </div>
-
-            <Button variant="outline" className="w-full" onClick={() => setCreateDialogOpen(true)}>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Daftarkan Pasien Baru
-            </Button>
+            
+            <Link href="/admin/pendaftaran/buat/pasienbaru" className="w-full">
+              <Button variant="outline" className="w-full">
+                <UserPlus className="h-4 w-4 mr-2" />
+                Daftarkan Pasien Baru
+              </Button>
+            </Link>
 
             <div className="flex justify-end">
               <Button
@@ -298,56 +267,6 @@ export default function PendaftaranBuatPage() {
           </CardContent>
         </Card>
       )}
-
-      {/* Dialog Buat Pasien Baru */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Daftarkan Pasien Baru</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleCreatePasien} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Nama Lengkap</Label>
-              <Input value={newPasienForm.nama_lengkap} onChange={(e) => setNewPasienForm({ ...newPasienForm, nama_lengkap: e.target.value })} required />
-            </div>
-            <div className="space-y-2">
-              <Label>NIK</Label>
-              <Input value={newPasienForm.nik} onChange={(e) => setNewPasienForm({ ...newPasienForm, nik: e.target.value })} required />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Tanggal Lahir</Label>
-                <Input type="date" value={newPasienForm.tanggal_lahir} onChange={(e) => setNewPasienForm({ ...newPasienForm, tanggal_lahir: e.target.value })} required />
-              </div>
-              <div className="space-y-2">
-                <Label>Jenis Kelamin</Label>
-                <select value={newPasienForm.jenis_kelamin} onChange={(e) => setNewPasienForm({ ...newPasienForm, jenis_kelamin: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  <option value="L">Laki-laki</option>
-                  <option value="P">Perempuan</option>
-                </select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Alamat</Label>
-              <Input value={newPasienForm.alamat} onChange={(e) => setNewPasienForm({ ...newPasienForm, alamat: e.target.value })} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>No. Telepon</Label>
-                <Input value={newPasienForm.no_telepon} onChange={(e) => setNewPasienForm({ ...newPasienForm, no_telepon: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>No. WhatsApp</Label>
-                <Input value={newPasienForm.no_whatsapp} onChange={(e) => setNewPasienForm({ ...newPasienForm, no_whatsapp: e.target.value })} />
-              </div>
-            </div>
-            <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={creatingPasien}>
-              {creatingPasien && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Daftarkan Pasien
-            </Button>
-          </form>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -9,11 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface Spesialisasi {
-  id: number;
-  nama_spesialisasi: string;
-}
+import { Spesialisasi } from '@/types/api-items';
 
 export default function SpesialisasiPage() {
   const [data, setData] = useState<Spesialisasi[]>([]);

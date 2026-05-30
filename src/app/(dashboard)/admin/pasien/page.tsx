@@ -9,17 +9,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatDate } from '@/lib/helpers';
-
-interface Pasien {
-  id: number;
-  no_rekam_medis: string;
-  nik: string;
-  nama_lengkap: string;
-  no_telepon: string;
-  no_whatsapp: string;
-  tanggal_lahir: string;
-  jenis_kelamin: string;
-}
+import { Pasien } from '@/types/api-items'
 
 export default function PasienListPage() {
   const [data, setData] = useState<Pasien[]>([]);

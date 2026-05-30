@@ -13,17 +13,7 @@ import { Pagination } from '@/components/shared/Pagination';
 import { Plus, Pencil, AlertTriangle, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/helpers';
-
-interface Produk {
-  id: number;
-  nama_produk: string;
-  kategori: string;
-  satuan: string;
-  harga_jual: number;
-  stok: number;
-  stok_minimum: number;
-  is_aktif: number;
-}
+import { Produk } from '@/types/api-items';
 
 const kategoriOptions = [
   { value: 'skincare', label: 'Skincare' },
@@ -219,7 +209,7 @@ export default function ProdukPage() {
                       <TableCell>
                         <span className="flex items-center gap-1">
                           {item.stok}
-                          {item.stok < item.stok_minimum && (
+                          {Number(item.stok) < Number(item.stok_minimum) && (
                             <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
                               <AlertTriangle className="h-3 w-3 mr-0.5" />
                               Rendah

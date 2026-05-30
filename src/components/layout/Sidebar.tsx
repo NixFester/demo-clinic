@@ -41,8 +41,10 @@ function getNavItems(role: string): NavItem[] {
   if (role === "admin" || role === "superadmin") {
     return [
       { href: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+      { href: "/admin/laporan", label: "Laporan", icon: <BarChart3 className="h-4 w-4" /> },
       { href: "/admin/pengguna", label: "Pengguna", icon: <Users className="h-4 w-4" /> },
       { href: "/admin/dokter", label: "Dokter", icon: <Stethoscope className="h-4 w-4" /> },
+      { href: "/admin/spesialisasi", label: "Spesialisasi", icon: <Stethoscope className="h-4 w-4" /> },
       { href: "/admin/layanan", label: "Layanan", icon: <Briefcase className="h-4 w-4" /> },
       { href: "/admin/produk", label: "Produk", icon: <Package className="h-4 w-4" /> },
       { href: "/admin/jadwal-dokter", label: "Jadwal Dokter", icon: <CalendarDays className="h-4 w-4" /> },
@@ -51,9 +53,10 @@ function getNavItems(role: string): NavItem[] {
       { href: "/admin/antrian", label: "Antrian", icon: <ClipboardList className="h-4 w-4" /> },
       { href: "/admin/rme", label: "Rekam Medis", icon: <FileText className="h-4 w-4" /> },
       { href: "/admin/kasir", label: "Kasir", icon: <Receipt className="h-4 w-4" /> },
+      { href: "/admin/pendaftaran/buat", label: "Pendaftaran", icon: <FileText className="h-4 w-4" /> },
       { href: "/admin/followup", label: "Follow Up WA", icon: <MessageSquare className="h-4 w-4" /> },
-      { href: "/admin/laporan", label: "Laporan", icon: <BarChart3 className="h-4 w-4" /> },
       { href: "/admin/pengaturan", label: "Pengaturan", icon: <Settings className="h-4 w-4" /> },
+      
     ];
   }
   if (role === "dokter") {

@@ -8,42 +8,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { formatCurrency, formatDate, formatDateTime } from '@/lib/helpers';
-
-interface PasienDetail {
-  id: number;
-  no_rekam_medis: string;
-  nik: string;
-  nama_lengkap: string;
-  tempat_lahir: string;
-  tanggal_lahir: string;
-  jenis_kelamin: string;
-  alamat: string;
-  no_telepon: string;
-  no_whatsapp: string;
-  golongan_darah: string;
-  alergi: string;
-  catatan_kulit: string;
-}
-
-interface RiwayatItem {
-  id: number;
-  tanggal: string;
-  no_antrian: number;
-  status: string;
-  jenis_kunjungan: string;
-  keluhan_utama: string;
-  nama_dokter: string;
-  nama_layanan: string;
-  total: number;
-  status_invoice: string;
-}
+import { Pasien, PasienRiwayatItem } from '@/types/api-items' 
 
 export default function PasienDetailPage() {
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
-  const [pasien, setPasien] = useState<PasienDetail | null>(null);
-  const [riwayat, setRiwayat] = useState<RiwayatItem[]>([]);
+  const [pasien, setPasien] = useState<Pasien | null>(null);
+  const [riwayat, setRiwayat] = useState<PasienRiwayatItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 

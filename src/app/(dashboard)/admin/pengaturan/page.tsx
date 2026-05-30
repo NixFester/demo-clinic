@@ -8,18 +8,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Save, Loader2 } from 'lucide-react';
-
-interface PengaturanData {
-  id?: number;
-  nama_klinik: string;
-  alamat_klinik: string;
-  no_telepon_klinik: string;
-  batas_diskon_karyawan: number;
-  footer_invoice: string;
-}
+import { Pengaturan } from '@/types/api-items';
 
 export default function PengaturanPage() {
-  const [form, setForm] = useState<PengaturanData>({
+  const [form, setForm] = useState<Pengaturan>({
+    id: 0,
     nama_klinik: '',
     alamat_klinik: '',
     no_telepon_klinik: '',
@@ -37,6 +30,7 @@ export default function PengaturanPage() {
         const data = await res.json();
         if (data && data.id) {
           setForm({
+            id: data.id || 0,
             nama_klinik: data.nama_klinik || '',
             alamat_klinik: data.alamat_klinik || '',
             no_telepon_klinik: data.no_telepon_klinik || '',
@@ -102,11 +96,6 @@ export default function PengaturanPage() {
             <div className="space-y-2">
               <Label>No. Telepon Klinik</Label>
               <Input value={form.no_telepon_klinik} onChange={(e) => setForm({ ...form, no_telepon_klinik: e.target.value })} placeholder="Masukkan nomor telepon..." />
-            </div>
-            <div className="space-y-2">
-              <Label>Batas Diskon Karyawan (%)</Label>
-              <Input type="number" min="0" max="100" value={form.batas_diskon_karyawan} onChange={(e) => setForm({ ...form, batas_diskon_karyawan: parseInt(e.target.value) || 0 })} />
-              <p className="text-xs text-gray-500">Karyawan hanya bisa memberikan diskon maksimal sebesar persentase ini</p>
             </div>
             <div className="space-y-2">
               <Label>Footer Invoice</Label>

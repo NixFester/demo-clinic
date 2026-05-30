@@ -12,16 +12,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Loader2, CalendarDays, AlertCircle } from 'lucide-react';
-
-interface JadwalItem {
-  id: number;
-  nama_dokter: string;
-  hari: string;
-  jam_mulai: string;
-  jam_selesai: string;
-  kuota: number;
-  is_aktif: number;
-}
+import { JadwalDokter } from '@/types/api-items';
 
 function getHariLabel(hari: string): string {
   const map: Record<string, string> = {
@@ -46,7 +37,7 @@ function getHariLabel(hari: string): string {
 const HARI_ORDER = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu', 'minggu', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 export default function DokterJadwalPage() {
-  const [data, setData] = useState<JadwalItem[]>([]);
+  const [data, setData] = useState<JadwalDokter[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,7 +49,7 @@ export default function DokterJadwalPage() {
         if (!res.ok) throw new Error('Gagal memuat data jadwal');
         const result = await res.json();
         // Sort by hari order
-        const items: JadwalItem[] = result.data || [];
+        const items: JadwalDokter[] = result.data || [];
         items.sort((a, b) => {
           const aIdx = HARI_ORDER.indexOf(a.hari?.toLowerCase());
           const bIdx = HARI_ORDER.indexOf(b.hari?.toLowerCase());

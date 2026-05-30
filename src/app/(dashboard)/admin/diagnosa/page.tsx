@@ -6,12 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, Loader2 } from 'lucide-react';
-
-interface Diagnosa {
-  id: number;
-  kode_icd10: string;
-  nama_diagnosa: string;
-}
+import { Diagnosa } from '@/types/api-items';
 
 export default function DiagnosaPage() {
   const [query, setQuery] = useState('');

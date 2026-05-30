@@ -5,27 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Pagination } from '@/components/shared/Pagination';
 import { StatusBadge } from '@/components/shared/StatusBadge';
-import { SearchInput } from '@/components/shared/SearchInput';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Eye, Loader2 } from 'lucide-react';
 import { formatDateTime } from '@/lib/helpers';
-
-interface RMEItem {
-  id: number;
-  status: string;
-  created_at: string;
-  nama_pasien: string;
-  nama_dokter: string;
-}
+import { RMEListItem } from '@/types/api-items';
 
 export default function RMEListPage() {
-  const [data, setData] = useState<RMEItem[]>([]);
+  const [data, setData] = useState<RMEListItem[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
   const router = useRouter();
 
   const fetchData = async (p = page) => {
@@ -84,7 +75,7 @@ export default function RMEListPage() {
                       <TableCell className="font-medium">{item.nama_pasien}</TableCell>
                       <TableCell>{item.nama_dokter}</TableCell>
                       <TableCell><StatusBadge status={item.status} /></TableCell>
-                      <TableCell>{formatDateTime(item.created_at)}</TableCell>
+                      <TableCell>{(item.updated_at && formatDateTime(item.updated_at) || item.created_at && formatDateTime(item.created_at))}</TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="ghost" onClick={() => router.push(`/admin/rme/${item.id}`)}>
                           <Eye className="h-4 w-4 mr-1" /> Lihat

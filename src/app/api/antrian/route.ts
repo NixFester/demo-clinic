@@ -12,8 +12,7 @@ export async function GET(req: NextRequest) {
     const id_dokter = searchParams.get("id_dokter");
 
     const data: Record<string, unknown> = {};
-    if (id_dokter) data.id_dokter = id_dokter;
-    else if (session.user.role === "dokter") {
+    if (session.user.role === "dokter") {
       // Dokter can only see own queue — we need to map user id to dokter id
       // For simplicity, pass the user id and let bridge handle it
       data.filter_by_user = session.user.id;

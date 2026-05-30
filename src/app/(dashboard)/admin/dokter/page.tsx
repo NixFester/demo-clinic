@@ -10,36 +10,14 @@ import { Label } from '@/components/ui/label';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Plus, Pencil, ToggleLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface Dokter {
-  id: number;
-  no_sip: string;
-  is_aktif: number;
-  nama_lengkap: string;
-  id_pengguna: number;
-  nama_spesialisasi: string;
-  id_spesialisasi: number;
-}
-
-interface Spesialisasi {
-  id: number;
-  nama_spesialisasi: string;
-}
-
-interface PenggunaOption {
-  id: number;
-  nama_lengkap: string;
-  username: string;
-  role: string;
-  is_aktif: number;
-}
+import { Dokter, Spesialisasi, Pengguna } from '@/types/api-items';
 
 type Step = 'pengguna' | 'dokter';
 
 export default function DokterPage() {
   const [data, setData] = useState<Dokter[]>([]);
   const [spesialisasiList, setSpesialisasiList] = useState<Spesialisasi[]>([]);
-  const [penggunaList, setPenggunaList] = useState<PenggunaOption[]>([]);
+  const [penggunaList, setPenggunaList] = useState<Pengguna[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -75,7 +53,7 @@ export default function DokterPage() {
       const specData = await specRes.json();
       const pengData = await pengRes.json();
       setSpesialisasiList(specData.data || []);
-      setPenggunaList((pengData.data || []).filter((p: PenggunaOption) => p.role === 'dokter'));
+      setPenggunaList((pengData.data || []).filter((p: Pengguna) => p.role === 'dokter'));
     } catch (err) {
       console.error('[DokterPage] Options error:', err);
     }

@@ -11,32 +11,7 @@ import { Download, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
-interface LaporanHarian {
-  total_pasien: number;
-  pasien_baru: number;
-  pasien_lama: number;
-  menunggu: number;
-  dipanggil: number;
-  selesai: number;
-  batal: number;
-  total_pendapatan: number;
-  per_metode?: Array<{
-    metode: string;
-    total: number;
-  }>;
-}
-
-interface LaporanBulanan {
-  total_pasien: number;
-  pasien_baru: number;
-  pasien_lama: number;
-  total_pendapatan: number;
-  per_metode?: Array<{
-    metode: string;
-    total: number;
-  }>;
-}
+import { LaporanHarian, LaporanBulanan } from '@/types/api-items';
 
 const bulanOptions = [
   { value: '1', label: 'Januari' }, { value: '2', label: 'Februari' },

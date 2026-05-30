@@ -24,6 +24,10 @@ node_modules
 .DS_Store
 *.pem
 
+/.zscripts/
+/agent-ctx/
+/upload/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

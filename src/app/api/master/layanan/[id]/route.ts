@@ -24,3 +24,23 @@ export async function PUT(
     return NextResponse.json({ error: error instanceof Error ? error.message : "Internal error" }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+  const session = await getServerSession(authOptions);
+  if (!session || !['admin', 'superadmin', 'karyawan'].includes(session.user.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  const { id } = await params;
+  console.log(`[API /master/layanan/${id}] DELETE deleting`);
+  const result = await callBridge("layanan.delete", { id: parseInt(id) });
+  return NextResponse.json(result);
+  } catch (error: unknown) {
+    console.error("[API /master/layanan/[id]] DELETE error:", error);
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Internal error" }, { status: 500 });
+  }
+}

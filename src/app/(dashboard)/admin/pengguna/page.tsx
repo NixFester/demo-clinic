@@ -11,15 +11,13 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Pagination } from '@/components/shared/Pagination';
 import { Plus, Pencil, ToggleLeft, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface Pengguna {
-  id: number;
-  nama_lengkap: string;
-  username: string;
-  role: string;
-  is_aktif: number;
-  created_at: string;
-}
+import { Pengguna } from '@/types/api-items';
+import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+ } from '@/components/ui/accordion';
 
 export default function PenggunaPage() {
   const [data, setData] = useState<Pengguna[]>([]);
@@ -173,13 +171,102 @@ export default function PenggunaPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Daftar Pengguna ({total})</CardTitle>
+          <CardTitle className="text-base">
+            Daftar Pengguna ({total})
+          </CardTitle>
         </CardHeader>
+
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
               <span className="ml-2 text-gray-500">Memuat data...</span>
+            </div>
+          ) : (
+            <div>
+              {/* Karyawan Aktif */}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nama</TableHead>
+                    <TableHead>Username</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {data.filter((user) => user.is_aktif == 1).length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="text-center py-8 text-gray-500"
+                      >
+                        Tidak ada data aktif
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    data.filter((user) => user.is_aktif == 1).map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-medium">
+                          {user.nama_lengkap}
+                        </TableCell>
+
+                        <TableCell>{user.username}</TableCell>
+
+                        <TableCell>{getRoleLabel(user.role)}</TableCell>
+
+                        <TableCell>
+                          <StatusBadge status="Aktif" />
+                        </TableCell>
+
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              onClick={() => openEdit(user)}
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              onClick={() => handleToggle(user.id)}
+                            >
+                              <ToggleLeft className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+              <Pagination
+                currentPage={page}
+                totalPages={lastPage}
+                onPageChange={setPage}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            Karyawan Non-Aktif ({data.filter((user) => user.is_aktif == 0).length})
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent>
+          {data.filter((user) => user.is_aktif == 0).length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              Tidak ada data karyawan non-aktif
             </div>
           ) : (
             <Table>
@@ -192,35 +279,48 @@ export default function PenggunaPage() {
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
-                {data.length === 0 ? (
-                  <TableRow><TableCell colSpan={5} className="text-center py-8 text-gray-500">Tidak ada data</TableCell></TableRow>
-                ) : (
-                  data.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-medium">{user.nama_lengkap}</TableCell>
-                      <TableCell>{user.username}</TableCell>
-                      <TableCell>{getRoleLabel(user.role)}</TableCell>
-                      <TableCell>
-                        <StatusBadge status={user.is_aktif ? 'final' : 'batal'} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(user)}>
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleToggle(user.id)}>
-                            <ToggleLeft className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
+                {data.filter((user) => user.is_aktif == 0).map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">
+                      {user.nama_lengkap}
+                    </TableCell>
+
+                    <TableCell>{user.username}</TableCell>
+
+                    <TableCell>{getRoleLabel(user.role)}</TableCell>
+
+                    <TableCell>
+                      <StatusBadge status="Non-Aktif" />
+                    </TableCell>
+
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => openEdit(user)}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => handleToggle(user.id)}
+                        >
+                          <ToggleLeft className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           )}
-          <Pagination currentPage={page} totalPages={lastPage} onPageChange={setPage} />
         </CardContent>
       </Card>
     </div>
