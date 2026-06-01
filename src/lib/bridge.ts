@@ -17,6 +17,29 @@ export interface BridgeResponse<T = unknown> {
   last_page?: number;
 }
 
+const BRIDGE_RETRIES = 3;
+const BRIDGE_RETRY_DELAY_MS = 300;
+
+export async function fetchWithRetry(url: string, options: RequestInit, retries = BRIDGE_RETRIES): Promise<Response> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      return res;
+    } catch (err: unknown) {
+      const isLast = attempt === retries;
+      const isSocket = err instanceof Error && 'code' in err && 
+        (err as NodeJS.ErrnoException).code === 'UND_ERR_SOCKET';
+
+      console.warn(`[Bridge] Attempt ${attempt}/${retries} failed:`, (err as Error).message);
+
+      if (isLast || !isSocket) throw err;
+
+      await new Promise(r => setTimeout(r, BRIDGE_RETRY_DELAY_MS * attempt)); // 300ms, 600ms
+    }
+  }
+  throw new Error('Unreachable');
+}
+
 export async function callBridge<T = unknown>(
   action: string,
   data: Record<string, unknown> = {}
@@ -26,7 +49,7 @@ export async function callBridge<T = unknown>(
   console.log(`[Bridge] → ${action}`, payload.substring(0, 300));
 
   try {
-    const res = await fetch(BRIDGE_URL, {
+    const res = await fetchWithRetry(BRIDGE_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

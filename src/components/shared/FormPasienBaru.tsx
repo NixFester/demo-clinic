@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Save, Loader2 } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 export default function FormPasienBaru() {
   const router = useRouter();
@@ -26,8 +27,9 @@ export default function FormPasienBaru() {
     alergi: '',
     catatan_kulit: '',
   });
+  const { data: session } = useSession();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -39,7 +41,14 @@ export default function FormPasienBaru() {
       const result = await res.json();
       if (res.ok) {
         toast.success(`Pasien berhasil ditambahkan! No. RM: ${result.no_rekam_medis}`);
-        router.push('/karyawan/pasien');
+         if (
+              session?.user?.role === 'admin' ||
+              session?.user?.role === 'superadmin'
+            ) {
+              router.push('/admin/pendaftaran/pasien');
+            } else if (session?.user?.role === 'karyawan') {
+              router.push('/karyawan/pendaftaran/pasien');
+            }
       } else {
         toast.error(result.error || 'Gagal menambahkan pasien');
       }

@@ -227,9 +227,15 @@ export default function KasirListView({ basePath, showGenerateDialog = true }: K
                           <Button
                             size="sm"
                             variant="ghost"
+                            className={
+                              item.total_dibayar > 0
+                                ? 'text-blue-600 hover:bg-blue-50 hover:text-blue-700 cursor-pointer'
+                                : 'text-green-600 hover:bg-green-50 hover:text-green-700 cursor-pointer'
+                            }
                             onClick={() => router.push(`${basePath}/${item.id}`)}
                           >
-                            <Eye className="h-4 w-4 mr-1" /> Detail
+                            <Eye className="h-4 w-4 mr-1" />
+                            {item.total_dibayar > 0 ? 'Lihat' : 'Bayar'}
                           </Button>
                         </TableCell>
                       </TableRow>

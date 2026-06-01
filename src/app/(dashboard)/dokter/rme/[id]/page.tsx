@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, FileCheck, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, FileCheck, Loader2, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { SoapCard }         from '@/components/rme/SoapCard';
 import { DiagnosaCard }     from '@/components/rme/DiagnosaCard';
@@ -16,14 +16,42 @@ import {
   statusBadgeClass, statusLabel,
   SOAP_EMPTY, SoapFields
 } from '@/components/rme/rme-helpers';
-
 import { RMEDetail, Diagnosa, Layanan, Produk, TindakanItem, ResepItem } from '@/types/api-items';
 
+const STEPS = [
+  { label: 'SOAP & Diagnosa', step: 1 },
+  { label: 'Tindakan',        step: 2 },
+  { label: 'Resep Obat',      step: 3 },
+];
+
+function StepBreadcrumb({ current }: { current: number }) {
+  return (
+    <nav className="flex items-center gap-1 text-sm flex-wrap">
+      {STEPS.map((s, i) => {
+        const done    = s.step < current;
+        const active  = s.step === current;
+        return (
+          <span key={s.step} className="flex items-center gap-1">
+            {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-gray-400 shrink-0" />}
+            <span className={
+              active ? 'font-semibold text-emerald-700'
+              : done  ? 'text-gray-400 line-through'
+              :         'text-gray-400'
+            }>
+              {s.step}. {s.label}
+            </span>
+          </span>
+        );
+      })}
+    </nav>
+  );
+}
 
 export default function DokterRMEDetailPage() {
   const { id: rmeIdParam } = useParams() as { id: string };
   const router = useRouter();
 
+  const [step,          setStep]          = useState(1);
   const [rme,           setRme]           = useState<RMEDetail | null>(null);
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState<string | null>(null);
@@ -37,7 +65,9 @@ export default function DokterRMEDetailPage() {
   const [layananList,   setLayananList]   = useState<Layanan[]>([]);
   const [produkList,    setProdukList]    = useState<Produk[]>([]);
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
+  const formatNoRM = (id: number | string) => `RM${String(id).padStart(6, '0')}`;
+
+  // ── Fetch ────────────────────────────────────────────────────────────────
 
   const fetchRme = useCallback(async () => {
     try {
@@ -45,7 +75,7 @@ export default function DokterRMEDetailPage() {
       const res  = await fetch(`/api/rme/${rmeIdParam}`);
       if (!res.ok) throw new Error('Gagal memuat data RME');
       const data = await res.json();
-      const d:RMEDetail  = data.data ?? data;
+      const d: RMEDetail = data.data ?? data;
       setRme(d);
       setSoap({
         subjektif: d.subjektif ?? '', objektif: d.objektif ?? '',
@@ -72,10 +102,10 @@ export default function DokterRMEDetailPage() {
     fetch('/api/master/produk?aktif=true').then(r  => r.json()).then(d => setProdukList(d.data  ?? [])).catch(() => {});
   }, [fetchRme]);
 
-  // ── Save draft ────────────────────────────────────────────────────────────
+  // ── Save draft ───────────────────────────────────────────────────────────
 
-  const handleSaveDraft = async () => {
-    if (!rme) return;
+  const saveDraft = async (): Promise<boolean> => {
+    if (!rme) return false;
     setSaving(true);
     try {
       const body: Record<string, unknown> = { ...soap };
@@ -87,15 +117,22 @@ export default function DokterRMEDetailPage() {
       const result = await res.json();
       if (!res.ok) throw new Error(result.error ?? 'Gagal menyimpan RME');
       toast.success('RME berhasil disimpan');
-      fetchRme();
+      await fetchRme();
+      return true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Gagal menyimpan RME');
+      return false;
     } finally {
       setSaving(false);
     }
   };
 
-  // ── Finalisasi ────────────────────────────────────────────────────────────
+  const handleSaveAndNext = async () => {
+    const ok = await saveDraft();
+    if (ok) setStep(s => Math.min(s + 1, 3));
+  };
+
+  // ── Finalisasi ───────────────────────────────────────────────────────────
 
   const handleFinalisasi = async () => {
     if (!rme) return;
@@ -117,7 +154,7 @@ export default function DokterRMEDetailPage() {
     }
   };
 
-  // ── Loading / error ───────────────────────────────────────────────────────
+  // ── Loading / error ──────────────────────────────────────────────────────
 
   if (loading) return (
     <div className="flex items-center justify-center py-16">
@@ -141,58 +178,103 @@ export default function DokterRMEDetailPage() {
   const tindakanItems: TindakanItem[] = (rme.tindakan as TindakanItem[]) ?? [];
   const resepItems:    ResepItem[]    = (rme.resep as { items?: ResepItem[] })?.items ?? [];
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="space-y-6">
+
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => router.back()}><ArrowLeft className="h-4 w-4" /></Button>
-          <div>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <Button variant="ghost" size="icon" onClick={() => router.back()} className="mt-0.5">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div className="space-y-1">
             <h1 className="text-2xl font-bold">RME — {rme.nama_pasien}</h1>
-            <p className="text-sm text-gray-500">No. RM: {rme.no_rekam_medis}</p>
+            <p className="text-sm text-gray-500">{formatNoRM(rme.id)}</p>
+            <StepBreadcrumb current={step} />
           </div>
         </div>
-        <Badge variant="outline" className={statusBadgeClass(rme.status)}>{statusLabel(rme.status)}</Badge>
+        <Badge variant="outline" className={statusBadgeClass(rme.status)}>
+          {statusLabel(rme.status)}
+        </Badge>
       </div>
 
-      <SoapCard value={soap} onChange={setSoap} editable={isDraft} />
+      {/* Step content */}
+      {step === 1 && (
+        <>
+          <SoapCard value={soap} onChange={setSoap} editable={isDraft} />
+          <DiagnosaCard
+            utama={diagUtama}       onSelectUtama={setDiagUtama}       onClearUtama={() => setDiagUtama(null)}
+            sekunder={diagSekunder} onSelectSekunder={setDiagSekunder} onClearSekunder={() => setDiagSekunder(null)}
+            editable={isDraft}
+          />
+        </>
+      )}
 
-      <DiagnosaCard
-        utama={diagUtama}     onSelectUtama={setDiagUtama}     onClearUtama={() => setDiagUtama(null)}
-        sekunder={diagSekunder} onSelectSekunder={setDiagSekunder} onClearSekunder={() => setDiagSekunder(null)}
-        editable={isDraft}
-      />
+      {step === 2 && (
+        <TindakanCard
+          rmeId={rme.id} items={tindakanItems}
+          layananList={layananList} editable={isDraft} onChanged={fetchRme}
+        />
+      )}
 
-      <TindakanCard rmeId={rme.id} items={tindakanItems} layananList={layananList} editable={isDraft} onChanged={fetchRme} />
-
-      <ResepCard rmeId={rme.id} items={resepItems} produkList={produkList} editable={isDraft} onChanged={fetchRme} />
+      {step === 3 && (
+        <>
+          <ResepCard
+            rmeId={rme.id} items={resepItems}
+            produkList={produkList} editable={isDraft} onChanged={fetchRme}
+          />
+          {isFinal && (
+            <Card className="border-green-200 bg-green-50">
+              <CardContent className="p-4 flex items-center gap-3">
+                <FileCheck className="h-5 w-5 text-green-600" />
+                <div>
+                  <p className="font-medium text-green-800">RME Telah Difinalisasi</p>
+                  <p className="text-sm text-green-600">Dokumen ini bersifat read-only dan tidak dapat diubah.</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
 
       {/* Action bar */}
       {isDraft && (
         <div className="flex flex-wrap gap-3 sticky bottom-0 bg-gray-50 py-4 border-t">
-          <Button onClick={handleSaveDraft} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
-            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-            Simpan Draft
-          </Button>
-          <Button variant="outline" onClick={() => setShowFinalDlg(true)} disabled={finalizing}>
-            <FileCheck className="h-4 w-4 mr-2" />Finalisasi
-          </Button>
-        </div>
-      )}
 
-      {/* Final notice */}
-      {isFinal && (
-        <Card className="border-green-200 bg-green-50">
-          <CardContent className="p-4 flex items-center gap-3">
-            <FileCheck className="h-5 w-5 text-green-600" />
-            <div>
-              <p className="font-medium text-green-800">RME Telah Difinalisasi</p>
-              <p className="text-sm text-green-600">Dokumen ini bersifat read-only dan tidak dapat diubah.</p>
-            </div>
-          </CardContent>
-        </Card>
+          {/* Kembali ke Awal — only step 3 */}
+          {step === 3 && (
+            <Button variant="ghost" onClick={() => setStep(1)} disabled={saving || finalizing}>
+              <ArrowLeft className="h-4 w-4 mr-2" />Kembali ke Awal
+            </Button>
+          )}
+
+          {/* Kembali — steps 2 & 3 */}
+          {step > 1 && (
+            <Button variant="outline" onClick={() => setStep(s => s - 1)} disabled={saving || finalizing}>
+              <ArrowLeft className="h-4 w-4 mr-2" />Kembali
+            </Button>
+          )}
+
+          {/* Primary action */}
+          {step < 3 ? (
+            <Button onClick={handleSaveAndNext} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
+              {saving
+                ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                : <Save className="h-4 w-4 mr-2" />}
+              Simpan Draft &amp; Lanjut
+            </Button>
+          ) : (
+            <Button
+              onClick={() => setShowFinalDlg(true)}
+              disabled={finalizing}
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              <FileCheck className="h-4 w-4 mr-2" />Finalisasi
+            </Button>
+          )}
+        </div>
       )}
 
       <FinalisasiDialog

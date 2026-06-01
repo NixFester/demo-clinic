@@ -145,8 +145,8 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             id_invoice: invoice!.id,
-            jumlah_bayar: parseFloat(payment.jumlah),
-            metode_pembayaran: payment.metode,
+            nominal: parseFloat(payment.jumlah),
+            metode: payment.metode,
           }),
         });
         if (!res.ok) {

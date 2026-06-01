@@ -37,8 +37,16 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     body.id_karyawan = parseInt(session.user.id);
     console.log("[API /invoice] POST generating invoice for pendaftaran:", body.id_pendaftaran);
-    const result = await callBridge("invoice.generate", body);
+    if (body.generate_from_pendaftaran) {
+      console.log("[API /invoice] POST generating from pendaftaran, additional data:", {
+        id_pendaftaran: body.id_pendaftaran,});
+        const result = await callBridge("invoice.generateMissing", body);
     return NextResponse.json(result, { status: 201 });
+    } else {
+      const result = await callBridge("invoice.generate", body);
+      return NextResponse.json(result, { status: 201 });
+    }
+    
   } catch (error: unknown) {
     console.error("[API /invoice] POST error:", error);
     return NextResponse.json(
