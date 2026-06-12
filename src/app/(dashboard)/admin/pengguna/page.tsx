@@ -114,6 +114,7 @@ export default function PenggunaPage() {
       case 'admin': return 'Administrator';
       case 'dokter': return 'Dokter';
       case 'karyawan': return 'Karyawan';
+      case 'kasir': return 'Kasir';
       default: return role;
     }
   };
@@ -152,6 +153,7 @@ export default function PenggunaPage() {
                   <option value="admin">Administrator</option>
                   <option value="dokter">Dokter</option>
                   <option value="karyawan">Karyawan</option>
+                  <option value="kasir">Kasir</option>
                 </select>
               </div>
               <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={submitting}>

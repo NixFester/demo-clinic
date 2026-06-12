@@ -71,6 +71,7 @@ export function getRoleLabel(role: string): string {
     admin: "Admin",
     dokter: "Dokter",
     karyawan: "Karyawan",
+    kasir: "Kasir",
   };
   return map[role] || role;
 }

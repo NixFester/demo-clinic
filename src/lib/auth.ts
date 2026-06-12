@@ -6,7 +6,7 @@ interface BridgeUser {
   id: number;
   nama_lengkap: string;
   username: string;
-  role: "superadmin" | "admin" | "dokter" | "karyawan";
+  role: "superadmin" | "admin" | "dokter" | "karyawan" | "kasir";
 }
 
 declare module "next-auth" {

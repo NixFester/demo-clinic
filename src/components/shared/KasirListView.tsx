@@ -8,7 +8,7 @@ import { Pagination } from '@/components/shared/Pagination';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useRouter } from 'next/navigation';
-import { Eye, Loader2, FileText, Plus } from 'lucide-react';
+import { Eye, Loader2, FileText, Plus, Printer } from 'lucide-react';
 import { formatCurrency } from '@/lib/helpers';
 import { toast } from 'sonner';
 
@@ -223,7 +223,7 @@ export default function KasirListView({ basePath, showGenerateDialog = true }: K
                         <TableCell>{formatCurrency(item.total)}</TableCell>
                         <TableCell>{formatCurrency(item.total_dibayar)}</TableCell>
                         <TableCell><StatusBadge status={item.status} /></TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right space-x-2">
                           <Button
                             size="sm"
                             variant="ghost"
@@ -236,6 +236,19 @@ export default function KasirListView({ basePath, showGenerateDialog = true }: K
                           >
                             <Eye className="h-4 w-4 mr-1" />
                             {item.total_dibayar > 0 ? 'Lihat' : 'Bayar'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-gray-600 hover:bg-gray-50 hover:text-gray-800"
+                            onClick={() => {
+                              if (typeof window !== 'undefined') {
+                                window.open(`/print/invoice/${item.id}`, '_blank', 'noopener,noreferrer');
+                              }
+                            }}
+                          >
+                            <Printer className="h-4 w-4 mr-1" />
+                            Cetak
                           </Button>
                         </TableCell>
                       </TableRow>

@@ -68,7 +68,7 @@ export function getIndonesianDay(dayName: string): string {
   return map[dayName] || dayName.toLowerCase();
 }
 
-export type UserRole = 'superadmin' | 'admin' | 'dokter' | 'karyawan';
+export type UserRole = 'superadmin' | 'admin' | 'dokter' | 'karyawan' | 'kasir';
 
 export function canAccessRoute(role: UserRole, route: string): boolean {
   if (role === 'superadmin') return true;
@@ -82,6 +82,9 @@ export function canAccessRoute(role: UserRole, route: string): boolean {
   if (route.startsWith('/karyawan')) {
     return role === 'karyawan';
   }
+  if (route.startsWith('/kasir')) {
+    return role === 'kasir';
+  }
   return false;
 }
 
@@ -94,6 +97,8 @@ export function getDashboardRoute(role: UserRole): string {
       return '/dokter/dashboard';
     case 'karyawan':
       return '/karyawan/dashboard';
+    case 'kasir':
+      return '/kasir/dashboard';
     default:
       return '/login';
   }

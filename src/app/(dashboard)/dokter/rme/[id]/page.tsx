@@ -19,6 +19,7 @@ import {
 import { RMEDetail, Diagnosa, Layanan, Produk, TindakanItem, ResepItem } from '@/types/api-items';
 
 const STEPS = [
+  { label: 'RME Sebelumnya',   step: 0 },
   { label: 'SOAP & Diagnosa', step: 1 },
   { label: 'Tindakan',        step: 2 },
   { label: 'Resep Obat',      step: 3 },
@@ -35,8 +36,7 @@ function StepBreadcrumb({ current }: { current: number }) {
             {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-gray-400 shrink-0" />}
             <span className={
               active ? 'font-semibold text-emerald-700'
-              : done  ? 'text-gray-400 line-through'
-              :         'text-gray-400'
+              : 'text-gray-400'
             }>
               {s.step}. {s.label}
             </span>
@@ -53,6 +53,7 @@ export default function DokterRMEDetailPage() {
 
   const [step,          setStep]          = useState(1);
   const [rme,           setRme]           = useState<RMEDetail | null>(null);
+  const [latestRme,     setLatestRme]     = useState<RMEDetail | null>(null);
   const [loading,       setLoading]       = useState(true);
   const [error,         setError]         = useState<string | null>(null);
   const [saving,        setSaving]        = useState(false);
@@ -101,6 +102,28 @@ export default function DokterRMEDetailPage() {
     fetch('/api/master/layanan?aktif=true').then(r => r.json()).then(d => setLayananList(d.data ?? [])).catch(() => {});
     fetch('/api/master/produk?aktif=true').then(r  => r.json()).then(d => setProdukList(d.data  ?? [])).catch(() => {});
   }, [fetchRme]);
+
+  // ── Fetch latest RME per patient ─────────────────────────────────────────
+
+  useEffect(() => {
+    if (!rme?.id_pasien) return;
+    const fetchLatest = async () => {
+      try {
+        const res = await fetch(`/api/rme/latestByPatient?id_pasien=${rme.id_pasien}&id_rme=${rme.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          const latest: RMEDetail = data.data ?? data;
+          if (latest && latest.id !== rme.id) {
+            setLatestRme(latest);
+            setStep(0);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch latest RME:', err);
+      }
+    };
+    fetchLatest();
+  }, [rme?.id_pasien, rme?.id]);
 
   // ── Save draft ───────────────────────────────────────────────────────────
 
@@ -201,6 +224,32 @@ export default function DokterRMEDetailPage() {
       </div>
 
       {/* Step content */}
+      {step === 0 && latestRme && (
+        <>
+          <Card className="border-blue-200 bg-blue-50">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3 mb-4">
+                <div>
+                  <h3 className="font-semibold text-blue-900">RME Sebelumnya</h3>
+                  <p className="text-sm text-blue-700">Data dari pemeriksaan terdahulu</p>
+                </div>
+              </div>
+              <div className="grid gap-4">
+                <SoapCard value={{
+                  subjektif: latestRme.subjektif ?? '',
+                  objektif: latestRme.objektif ?? '',
+                  assesment: latestRme.assesment ?? '',
+                  plan: latestRme.plan ?? '',
+                  kondisi_masuk: latestRme.kondisi_masuk ?? '',
+                  kondisi_keluar: latestRme.kondisi_keluar ?? '',
+                  instruksi_tindak_lanjut: latestRme.instruksi_tindak_lanjut ?? '',
+                }} onChange={() => {}} editable={false} />
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
       {step === 1 && (
         <>
           <SoapCard value={soap} onChange={setSoap} editable={isDraft} />
@@ -258,20 +307,24 @@ export default function DokterRMEDetailPage() {
           )}
 
           {/* Primary action */}
-          {step < 3 ? (
+          {step < 3 && step !== 0 ? (
             <Button onClick={handleSaveAndNext} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
               {saving
                 ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 : <Save className="h-4 w-4 mr-2" />}
               Simpan Draft &amp; Lanjut
             </Button>
-          ) : (
+          ) : step !== 0 ? (
             <Button
               onClick={() => setShowFinalDlg(true)}
               disabled={finalizing}
               className="bg-emerald-600 hover:bg-emerald-700"
             >
               <FileCheck className="h-4 w-4 mr-2" />Finalisasi
+            </Button>
+          ): (
+            <Button onClick={() => setStep(1)} className="bg-emerald-600 hover:bg-emerald-700">
+              Lanjut
             </Button>
           )}
         </div>

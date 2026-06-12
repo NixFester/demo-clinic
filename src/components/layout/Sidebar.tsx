@@ -66,6 +66,12 @@ function getNavItems(role: string): NavItem[] {
       { href: "/dokter/jadwal", label: "Jadwal Saya", icon: <Clock className="h-4 w-4" /> },
     ];
   }
+  if (role === "kasir") {
+    return [
+      { href: "/kasir/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+      { href: "/kasir/laporan", label: "Laporan Pembayaran", icon: <Receipt className="h-4 w-4" /> },
+    ];
+  }
   // karyawan
   return [
     { href: "/karyawan/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },

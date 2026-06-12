@@ -6,8 +6,8 @@
 // ─── Common ──────────────────────────────────────────────────────────────────
 
 export interface Timestamps {
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 /** Paginated response from paginate() helper */
@@ -36,7 +36,7 @@ export interface InsertResponse {
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
-export type RoleEnum           = 'admin' | 'dokter' | 'karyawan';
+export type RoleEnum           = 'admin' | 'dokter' | 'karyawan' | 'kasir';
 export type KategoriLayanan    = 'kecantikan' | 'medis' | 'konsultasi';
 export type KategoriProduk     = 'skincare' | 'obat' | 'suplemen' | 'lainnya';
 export type GolonganDarah      = 'A' | 'B' | 'AB' | 'O' | 'tidak_diketahui';
@@ -275,6 +275,9 @@ export interface PendaftaranListItem extends Timestamps {
   jenis_kunjungan: JenisKunjungan;
   nama_pasien:     string;
   nama_dokter:     string;
+  id_invoice?:     number | null;
+  no_invoice?:     string | null;
+  status_invoice?: StatusInvoice | null;
 }
 
 /** pendaftaran.show — full detail with joins */

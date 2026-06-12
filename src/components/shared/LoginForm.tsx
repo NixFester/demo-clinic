@@ -40,6 +40,7 @@ export default function LoginForm() {
           superadmin: "/admin/dashboard",
           dokter: "/dokter/dashboard",
           karyawan: "/karyawan/dashboard",
+          kasir: "/kasir/dashboard",
         };
 
         router.push(redirectMap[role] || "/admin/dashboard");

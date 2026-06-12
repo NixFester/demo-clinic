@@ -7,7 +7,12 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (session.user.role !== "admin" && session.user.role !== "superadmin" && session.user.role !== "karyawan") {
+    if (
+      session.user.role !== "admin" &&
+      session.user.role !== "superadmin" &&
+      session.user.role !== "karyawan" &&
+      session.user.role !== "kasir"
+    ) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -15,11 +20,16 @@ export async function POST(req: NextRequest) {
     body.id_karyawan = parseInt(session.user.id);
     console.log(`[API /pembayaran] Processing payment for invoice: ${body.id_invoice}`);
 
-    const result = await callBridge("pembayaran.store", body);
+    const result = await callBridge("pembayaran.store", body) as { success?: boolean; id?: number; [key: string]: unknown };
+    const paymentResult = result;
 
     // Check if invoice is now lunas, trigger stock deduction
-    if (result.success || result.id) {
-      const invoice = await callBridge<Record<string, unknown>>("invoice.show", { id: body.id_invoice });
+    if (paymentResult.success || paymentResult.id) {
+      const invoiceResult = await callBridge("invoice.show", { id: body.id_invoice });
+      const invoice = invoiceResult as {
+        status?: string;
+        detail_invoice?: Array<Record<string, unknown>>;
+      };
       if (invoice.status === "lunas" && invoice.detail_invoice) {
         const produkItems = (invoice.detail_invoice as Array<Record<string, unknown>>)
           .filter((d: Record<string, unknown>) => d.jenis === "produk" && d.id_referensi)
