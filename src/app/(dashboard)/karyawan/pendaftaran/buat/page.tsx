@@ -186,7 +186,7 @@ export default function KaryawanPendaftaranBuatPage() {
               </div>
             </div>
 
-            <Button variant="outline" className="w-full" onClick={() => setCreateDialogOpen(true)}>
+            <Button variant="outline" className="w-full" onClick={() => router.push('/karyawan/pasien/buat')}>
               <UserPlus className="h-4 w-4 mr-2" />
               Daftarkan Pasien Baru
             </Button>

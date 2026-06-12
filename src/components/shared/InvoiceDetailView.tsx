@@ -164,6 +164,12 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
     }
   };
 
+  const handleCetak = () => {
+    if (typeof window !== 'undefined' && invoice) {
+      window.open(`/print/invoice/${invoice.id}`, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   if (loading) return (
     <div className="flex items-center justify-center py-16">
       <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -199,6 +205,9 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
             {invoice.created_at && ` | ${formatDateTime(invoice.created_at)}`}
           </p>
         </div>
+        <Button size="sm" variant="outline" onClick={handleCetak}>
+          Cetak
+        </Button>
         <StatusBadge status={invoice.status} />
       </div>
 

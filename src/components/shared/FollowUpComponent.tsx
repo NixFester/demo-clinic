@@ -119,28 +119,31 @@ export default function FollowUpComponent({ pasienSource = 'pasien' }: FollowUpC
 
   useEffect(() => { fetchData(); fetchPasien(); }, [page]);
 
-  const handleJenisChange = (jenis: JenisFollowUp) => {
-    const pasien = pasienList.find(p => p.id === form.id_pasien);
-    const nama = pasien?.nama_lengkap || '{nama}';
-    const template = messageTemplates[jenis]?.replace('{nama}', nama) || '';
-    setForm({ ...form, jenis, pesan: template });
-  };
+const handleJenisChange = (jenis: JenisFollowUp) => {
+  const pasien = pasienList.find(p => p.id === form.id_pasien);
+  const nama = pasien?.nama_lengkap || '{nama}';
+  const template = (messageTemplates[jenis] ?? '').replace('{nama}', nama);
+  const wa = pasien?.no_whatsapp ?? '';
+  setForm({ ...form, jenis, pesan: template, wa_link: wa ? generateWALink(wa, template) : '' });
+};
 
-  const handlePasienChange = (id: string) => {
-    const pasien = pasienList.find(p => p.id === Number(id));
-    if (!pasien) {
-      setForm({ ...form, id_pasien: Number(id), no_whatsapp: '', pesan: '', wa_link: '' });
-      return;
-    }
-    const template = messageTemplates[form.jenis]?.replace('{nama}', pasien.nama_lengkap) || form.pesan;
-    setForm({
-      ...form,
-      id_pasien: Number(id),
-      no_whatsapp: pasien.no_whatsapp,
-      pesan: template,
-      wa_link: generateWALink(pasien.no_whatsapp, template),
-    });
-  };
+const handlePasienChange = (id: string) => {
+  const pasien = pasienList.find(p => p.id === Number(id));
+  if (!pasien) {
+    setForm({ ...form, id_pasien: Number(id), no_whatsapp: '', pesan: '', wa_link: '' });
+    return;
+  }
+  const nama = pasien.nama_lengkap;
+  const template = (messageTemplates[form.jenis] ?? '').replace('{nama}', nama);
+  const wa = pasien.no_whatsapp ?? '';
+  setForm({
+    ...form,
+    id_pasien: Number(id),
+    no_whatsapp: wa,
+    pesan: template,
+    wa_link: wa ? generateWALink(wa, template) : '',
+  });
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -45,9 +45,9 @@ export default function FormPasienBaru() {
               session?.user?.role === 'admin' ||
               session?.user?.role === 'superadmin'
             ) {
-              router.push('/admin/pendaftaran/pasien');
+              router.push('/admin/pendaftaran/buat');
             } else if (session?.user?.role === 'karyawan') {
-              router.push('/karyawan/pendaftaran/pasien');
+              router.push('/karyawan/pendaftaran/buat');
             }
       } else {
         toast.error(result.error || 'Gagal menambahkan pasien');
