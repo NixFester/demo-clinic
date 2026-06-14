@@ -10,6 +10,7 @@ import { Stethoscope, Plus, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { fmtCurrency} from './rme-helpers';
 import { TindakanItem, Layanan } from '@/types/api-items';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 interface TindakanCardProps {
@@ -22,6 +23,7 @@ interface TindakanCardProps {
 }
 
 export function TindakanCard({ rmeId, items, layananList, editable = true, onChanged }: TindakanCardProps) {
+  const isMobile = useIsMobile();
   const [selectedLayanan, setSelectedLayanan] = useState('');
   const [keterangan,      setKeterangan]      = useState('');
   const [adding,          setAdding]          = useState(false);
@@ -117,8 +119,8 @@ export function TindakanCard({ rmeId, items, layananList, editable = true, onCha
         {/* Add form */}
         {editable && (
           <>
-            <div className="flex flex-wrap gap-3 items-end">
-              <div className="space-y-1 flex-1 min-w-[200px]">
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'} gap-3`}>
+              <div className="space-y-1 w-full">
                 <Label className="text-xs">Layanan</Label>
                 <select
                   value={selectedLayanan}
@@ -133,11 +135,11 @@ export function TindakanCard({ rmeId, items, layananList, editable = true, onCha
                   ))}
                 </select>
               </div>
-              <div className="space-y-1 flex-1 min-w-[150px]">
+              <div className="space-y-1 w-full">
                 <Label className="text-xs">Keterangan</Label>
                 <Input value={keterangan} onChange={(e) => setKeterangan(e.target.value)} placeholder="Opsional" />
               </div>
-              <Button type="button" size="sm" onClick={handleAdd} disabled={adding || !selectedLayanan}>
+              <Button className="w-full sm:w-auto" type="button" size="sm" onClick={handleAdd} disabled={adding || !selectedLayanan}>
                 {adding ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
                 Tambah
               </Button>

@@ -50,7 +50,7 @@ export default function PasienListPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <h1 className="text-2xl font-bold">Daftar Pasien</h1>
       </div>
 

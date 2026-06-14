@@ -236,7 +236,7 @@ export default function KatalogProdukPage() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>{editId ? 'Edit Produk' : 'Tambah Produk'}</DialogTitle>
           </DialogHeader>

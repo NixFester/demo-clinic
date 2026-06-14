@@ -30,6 +30,9 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { useState } from "react";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface NavItem {
   href: string;
@@ -88,6 +91,7 @@ function getNavItems(role: string): NavItem[] {
 }
 
 export default function Sidebar() {
+  const isMobile = useIsMobile();
   const { data: session } = useSession();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
@@ -96,6 +100,51 @@ export default function Sidebar() {
 
   const role = session.user.role;
   const items = getNavItems(role);
+  if (isMobile) {
+  return (
+    <>
+      {/* Floating hamburger button */}
+      <Sheet>
+        <SheetTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="fixed bottom-3 right-3 z-50 md:hidden"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="right" className="w-64 p-0">
+          <SheetTitle className="p-4 border-b">
+            <div className="flex items-center gap-2">
+              <Heart className="h-5 w-5 text-emerald-600" />
+              <span className="font-bold text-emerald-700 text-sm">SIMKlinik</span>
+            </div>
+          </SheetTitle>
+          <ScrollArea className="flex-1 py-2">
+              {items.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                    pathname === item.href || pathname.startsWith(item.href + "/")
+                      ? "bg-emerald-100 text-emerald-700"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                    collapsed && "justify-center px-2"
+                  )}
+                  title={collapsed ? item.label : undefined}
+                >
+                  {item.icon}
+                  {!collapsed && <span>{item.label}</span>}
+                </Link>
+              ))}
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}
 
   return (
     <div

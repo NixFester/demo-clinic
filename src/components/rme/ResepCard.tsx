@@ -10,6 +10,7 @@ import { AlertTriangle, Plus, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { fmtCurrency} from './rme-helpers';
 import { ResepItem, Produk } from '@/types/api-items';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ResepCardProps {
   rmeId:       number | null;
@@ -20,6 +21,7 @@ interface ResepCardProps {
 }
 
 export function ResepCard({ rmeId, items, produkList, editable = true, onChanged }: ResepCardProps) {
+  const isMobile = useIsMobile();
   const [selectedProduk, setSelectedProduk] = useState('');
   const [jumlah,         setJumlah]         = useState('1');
   const [dosis,          setDosis]          = useState('');
@@ -138,7 +140,7 @@ export function ResepCard({ rmeId, items, produkList, editable = true, onChanged
         {/* Add form */}
         {editable && (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'} gap-3`}>
               <div className="space-y-1">
                 <Label className="text-xs">Produk</Label>
                 <select

@@ -219,9 +219,9 @@ export default function LaporanPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <h1 className="text-2xl font-bold">Laporan</h1>
-        <Button variant="outline" onClick={handleExport}>
+        <Button variant="outline" className="w-full sm:w-auto" onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" />
           Export
         </Button>

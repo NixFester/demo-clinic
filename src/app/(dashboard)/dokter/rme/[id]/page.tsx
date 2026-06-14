@@ -17,6 +17,7 @@ import {
   SOAP_EMPTY, SoapFields
 } from '@/components/rme/rme-helpers';
 import { RMEDetail, Diagnosa, Layanan, Produk, TindakanItem, ResepItem } from '@/types/api-items';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const STEPS = [
   { label: 'RME Sebelumnya',   step: 0 },
@@ -38,7 +39,7 @@ function StepBreadcrumb({ current }: { current: number }) {
               active ? 'font-semibold text-emerald-700'
               : 'text-gray-400'
             }>
-              {s.step}. {s.label}
+              {s.step}.{' '} <span className="hidden sm:inline">{s.label}</span>
             </span>
           </span>
         );
@@ -48,6 +49,7 @@ function StepBreadcrumb({ current }: { current: number }) {
 }
 
 export default function DokterRMEDetailPage() {
+  const isMobile = useIsMobile();
   const { id: rmeIdParam } = useParams() as { id: string };
   const router = useRouter();
 
@@ -290,7 +292,7 @@ export default function DokterRMEDetailPage() {
 
       {/* Action bar */}
       {isDraft && (
-        <div className="flex flex-wrap gap-3 sticky bottom-0 bg-gray-50 py-4 border-t">
+        <div className={`flex ${isMobile ? 'flex-col' : 'flex-wrap'} gap-3 sticky bottom-0 bg-gray-50 py-4 border-t px-4`}>
 
           {/* Kembali ke Awal — only step 3 */}
           {step === 3 && (
@@ -308,22 +310,22 @@ export default function DokterRMEDetailPage() {
 
           {/* Primary action */}
           {step < 3 && step !== 0 ? (
-            <Button onClick={handleSaveAndNext} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleSaveAndNext} disabled={saving} className={"bg-emerald-600 hover:bg-emerald-700 ${isMobile ? 'w-full' : ''}"}>
               {saving
                 ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                 : <Save className="h-4 w-4 mr-2" />}
               Simpan Draft &amp; Lanjut
             </Button>
           ) : step !== 0 ? (
-            <Button
+            <Button 
               onClick={() => setShowFinalDlg(true)}
               disabled={finalizing}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className={"bg-emerald-600 hover:bg-emerald-700 ${isMobile ? 'w-full' : ''}"}
             >
               <FileCheck className="h-4 w-4 mr-2" />Finalisasi
             </Button>
           ): (
-            <Button onClick={() => setStep(1)} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={() => setStep(1)} className={"bg-emerald-600 hover:bg-emerald-700 ${isMobile ? 'w-full' : ''}"}>
               Lanjut
             </Button>
           )}

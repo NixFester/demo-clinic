@@ -10,6 +10,8 @@ import { ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { toast } from 'sonner';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
+import { useIsMobile } from "@/hooks/use-mobile";
+
 
 interface PembayaranItem {
   id: number;
@@ -69,6 +71,7 @@ const metodeOptions = [
 
 export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewProps) {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [invoice, setInvoice] = useState<InvoiceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -217,9 +220,21 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
         <CardContent>
           {invoice.items.length === 0 ? (
             <div className="text-center py-8 text-gray-500">Tidak ada item pada invoice ini</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
+          ) : isMobile ? (
+  <div className="space-y-2">
+    {invoice.items.map((item) => (
+      <div key={item.id} className="flex justify-between items-start py-2 border-b last:border-0">
+        <div className="flex-1 pr-2">
+          <p className="text-sm font-medium">{item.nama_item}</p>
+          <p className="text-xs text-gray-500">{item.jenis} · {item.qty ?? '-'} x {item.harga_satuan !== undefined ? formatCurrency(item.harga_satuan) : '-'}</p>
+        </div>
+        <p className="text-sm font-medium">{item.subtotal !== undefined ? formatCurrency(item.subtotal) : '-'}</p>
+      </div>
+    ))}
+  </div>
+) : (
+  <div className="overflow-x-auto">
+    <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="px-4 py-2 font-medium">Nama Item</th>
@@ -245,8 +260,8 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
                   ))}
                 </tbody>
               </table>
-            </div>
-          )}
+  </div>
+)}
         </CardContent>
       </Card>
 
@@ -356,7 +371,7 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
               </div>
 
               {payments.map((payment, index) => (
-                <div key={index} className="flex gap-3 items-end">
+                <div key={index} className={`flex ${isMobile ? 'flex-col' : 'flex-row'} gap-3 items-start`}>
                   <div className="space-y-2 flex-1">
                     <Label className="text-xs">Metode</Label>
                     <select

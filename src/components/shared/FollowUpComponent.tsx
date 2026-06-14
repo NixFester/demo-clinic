@@ -200,7 +200,7 @@ const handlePasienChange = (id: string) => {
             <Plus className="h-4 w-4 mr-2" />
             Buat Follow-up
           </Button>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Buat Follow-up Baru</DialogTitle>
             </DialogHeader>

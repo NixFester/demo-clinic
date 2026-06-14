@@ -1,16 +1,29 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Pagination } from '@/components/shared/Pagination';
-import { StatusBadge } from '@/components/shared/StatusBadge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useRouter } from 'next/navigation';
-import { Eye, Loader2, FileText, Plus, Printer } from 'lucide-react';
-import { formatCurrency } from '@/lib/helpers';
-import { toast } from 'sonner';
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Pagination } from "@/components/shared/Pagination";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useRouter } from "next/navigation";
+import { Eye, Loader2, FileText, Plus, Printer } from "lucide-react";
+import { formatCurrency } from "@/lib/helpers";
+import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface InvoiceListItem {
   id: number;
@@ -42,19 +55,25 @@ interface KasirListViewProps {
   showGenerateDialog?: boolean;
 }
 
-export default function KasirListView({ basePath, showGenerateDialog = true }: KasirListViewProps) {
+export default function KasirListView({
+  basePath,
+  showGenerateDialog = true,
+}: KasirListViewProps) {
   const router = useRouter();
+  const isMobile = useIsMobile();
 
   const [data, setData] = useState<InvoiceListItem[]>([]);
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   // Generate dialog state (only used when showGenerateDialog=true)
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [pendaftaranList, setPendaftaranList] = useState<PendaftaranSelesai[]>([]);
-  const [selectedPendaftaran, setSelectedPendaftaran] = useState('');
+  const [pendaftaranList, setPendaftaranList] = useState<PendaftaranSelesai[]>(
+    [],
+  );
+  const [selectedPendaftaran, setSelectedPendaftaran] = useState("");
   const [loadingPendaftaran, setLoadingPendaftaran] = useState(false);
   const [generating, setGenerating] = useState(false);
 
@@ -62,36 +81,42 @@ export default function KasirListView({ basePath, showGenerateDialog = true }: K
 
   const fetchData = async (p = page) => {
     setLoading(true);
-    setError('');
+    setError("");
     try {
       const res = await fetch(`/api/invoice?page=${p}`);
       const result = await res.json();
       // Normalise field name: karyawan API returns `dibayar`, admin returns `total_dibayar`
-      const normalised = (result.data || []).map((item: Record<string, unknown>) => ({
-        ...item,
-        total_dibayar: (item.total_dibayar ?? item.dibayar ?? 0) as number,
-      }));
+      const normalised = (result.data || []).map(
+        (item: Record<string, unknown>) => ({
+          ...item,
+          total_dibayar: (item.total_dibayar ?? item.dibayar ?? 0) as number,
+        }),
+      );
       setData(normalised);
       setLastPage(result.last_page || 1);
     } catch (err) {
-      console.error('[KasirListView] Error:', err);
-      setError('Gagal memuat data invoice');
+      console.error("[KasirListView] Error:", err);
+      setError("Gagal memuat data invoice");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchData(); }, [page]);
+  useEffect(() => {
+    fetchData();
+  }, [page]);
 
   const fetchPendaftaran = async () => {
     setLoadingPendaftaran(true);
     try {
-      const res = await fetch('/api/pendaftaran?status=selesai&tanpa_invoice=true');
+      const res = await fetch(
+        "/api/pendaftaran?status=selesai&tanpa_invoice=true",
+      );
       const result = await res.json();
       setPendaftaranList(result.data || []);
     } catch (err) {
-      console.error('[KasirListView] Pendaftaran error:', err);
-      toast.error('Gagal memuat daftar pendaftaran');
+      console.error("[KasirListView] Pendaftaran error:", err);
+      toast.error("Gagal memuat daftar pendaftaran");
     } finally {
       setLoadingPendaftaran(false);
     }
@@ -104,21 +129,23 @@ export default function KasirListView({ basePath, showGenerateDialog = true }: K
   const handleAutoGenerate = async () => {
     setGenerating(true);
     try {
-      const res = await fetch('/api/invoice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ generate_from_pendaftaran: true }),
       });
       const result = await res.json();
       if (res.ok) {
-        toast.success('Invoice berhasil digenerate');
+        toast.success("Invoice berhasil digenerate");
         setDialogOpen(false);
         fetchData();
       } else {
-        toast.error(result.error || 'Tidak ada pendaftaran yang memerlukan invoice');
+        toast.error(
+          result.error || "Tidak ada pendaftaran yang memerlukan invoice",
+        );
       }
     } catch {
-      toast.error('Gagal generate invoice');
+      toast.error("Gagal generate invoice");
     } finally {
       setGenerating(false);
     }
@@ -127,27 +154,27 @@ export default function KasirListView({ basePath, showGenerateDialog = true }: K
   /** Generate invoice for a specific pendaftaran (karyawan dialog only). */
   const handleGenerateSelected = async () => {
     if (!selectedPendaftaran) {
-      toast.error('Pilih pendaftaran terlebih dahulu');
+      toast.error("Pilih pendaftaran terlebih dahulu");
       return;
     }
     setGenerating(true);
     try {
-      const res = await fetch('/api/invoice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("/api/invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id_pendaftaran: parseInt(selectedPendaftaran) }),
       });
       const result = await res.json();
       if (res.ok) {
-        toast.success('Invoice berhasil digenerate');
+        toast.success("Invoice berhasil digenerate");
         setDialogOpen(false);
-        setSelectedPendaftaran('');
+        setSelectedPendaftaran("");
         fetchData();
       } else {
-        toast.error(result.error || 'Gagal generate invoice');
+        toast.error(result.error || "Gagal generate invoice");
       }
     } catch {
-      toast.error('Gagal generate invoice');
+      toast.error("Gagal generate invoice");
     } finally {
       setGenerating(false);
     }
@@ -173,10 +200,11 @@ export default function KasirListView({ basePath, showGenerateDialog = true }: K
           disabled={generating && !showGenerateDialog}
           className="bg-emerald-600 hover:bg-emerald-700"
         >
-          {generating && !showGenerateDialog
-            ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            : <FileText className="h-4 w-4 mr-2" />
-          }
+          {generating && !showGenerateDialog ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <FileText className="h-4 w-4 mr-2" />
+          )}
           Generate Invoice
         </Button>
       </div>
@@ -188,12 +216,65 @@ export default function KasirListView({ basePath, showGenerateDialog = true }: K
       )}
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Daftar Invoice</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Daftar Invoice</CardTitle>
+        </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
               <span className="ml-2 text-gray-500">Memuat data...</span>
+            </div>
+          ) : isMobile ? (
+            <div className="space-y-3">
+              {data.map((item) => (
+                <div
+                  key={item.id}
+                  className="border rounded-lg p-3 bg-white space-y-2"
+                >
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-mono text-sm font-semibold">
+                        {item.no_invoice}
+                      </p>
+                      <p className="font-medium">{item.nama_pasien}</p>
+                    </div>
+                    <StatusBadge status={item.status} />
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Total</span>
+                    <span className="font-medium">
+                      {formatCurrency(item.total)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Dibayar</span>
+                    <span>{formatCurrency(item.total_dibayar)}</span>
+                  </div>
+                  <div className="flex gap-2 pt-1 border-t">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="flex-1"
+                      onClick={() => router.push(`${basePath}/${item.id}`)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      {item.total_dibayar > 0 ? "Lihat" : "Bayar"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="flex-1"
+                      onClick={() =>
+                        window.open(`/print/invoice/${item.id}`, "_blank")
+                      }
+                    >
+                      <Printer className="h-4 w-4 mr-1" />
+                      Cetak
+                    </Button>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -211,39 +292,56 @@ export default function KasirListView({ basePath, showGenerateDialog = true }: K
                 <TableBody>
                   {data.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                      <TableCell
+                        colSpan={6}
+                        className="text-center py-8 text-gray-500"
+                      >
                         Tidak ada invoice
                       </TableCell>
                     </TableRow>
                   ) : (
                     data.map((item) => (
                       <TableRow key={item.id}>
-                        <TableCell className="font-mono">{item.no_invoice}</TableCell>
-                        <TableCell className="font-medium">{item.nama_pasien}</TableCell>
+                        <TableCell className="font-mono">
+                          {item.no_invoice}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {item.nama_pasien}
+                        </TableCell>
                         <TableCell>{formatCurrency(item.total)}</TableCell>
-                        <TableCell>{formatCurrency(item.total_dibayar)}</TableCell>
-                        <TableCell><StatusBadge status={item.status} /></TableCell>
+                        <TableCell>
+                          {formatCurrency(item.total_dibayar)}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={item.status} />
+                        </TableCell>
                         <TableCell className="text-right space-x-2">
                           <Button
                             size="sm"
                             variant="ghost"
                             className={
                               item.total_dibayar > 0
-                                ? 'text-blue-600 hover:bg-blue-50 hover:text-blue-700 cursor-pointer'
-                                : 'text-green-600 hover:bg-green-50 hover:text-green-700 cursor-pointer'
+                                ? "text-blue-600 hover:bg-blue-50 hover:text-blue-700 cursor-pointer"
+                                : "text-green-600 hover:bg-green-50 hover:text-green-700 cursor-pointer"
                             }
-                            onClick={() => router.push(`${basePath}/${item.id}`)}
+                            onClick={() =>
+                              router.push(`${basePath}/${item.id}`)
+                            }
                           >
                             <Eye className="h-4 w-4 mr-1" />
-                            {item.total_dibayar > 0 ? 'Lihat' : 'Bayar'}
+                            {item.total_dibayar > 0 ? "Lihat" : "Bayar"}
                           </Button>
                           <Button
                             size="sm"
                             variant="ghost"
                             className="text-gray-600 hover:bg-gray-50 hover:text-gray-800"
                             onClick={() => {
-                              if (typeof window !== 'undefined') {
-                                window.open(`/print/invoice/${item.id}`, '_blank', 'noopener,noreferrer');
+                              if (typeof window !== "undefined") {
+                                window.open(
+                                  `/print/invoice/${item.id}`,
+                                  "_blank",
+                                  "noopener,noreferrer",
+                                );
                               }
                             }}
                           >
@@ -258,20 +356,26 @@ export default function KasirListView({ basePath, showGenerateDialog = true }: K
               </Table>
             </div>
           )}
-          <Pagination currentPage={page} totalPages={lastPage} onPageChange={setPage} />
+          <Pagination
+            currentPage={page}
+            totalPages={lastPage}
+            onPageChange={setPage}
+          />
         </CardContent>
       </Card>
 
       {/* Generate Invoice Dialog — karyawan only */}
       {showGenerateDialog && (
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Generate Invoice</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Pilih Pendaftaran yang Selesai</label>
+                <label className="text-sm font-medium">
+                  Pilih Pendaftaran yang Selesai
+                </label>
                 {loadingPendaftaran ? (
                   <div className="flex items-center justify-center py-4">
                     <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
@@ -311,10 +415,11 @@ export default function KasirListView({ basePath, showGenerateDialog = true }: K
                 className="w-full bg-emerald-600 hover:bg-emerald-700"
                 disabled={generating}
               >
-                {generating
-                  ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  : <Plus className="h-4 w-4 mr-2" />
-                }
+                {generating ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Plus className="h-4 w-4 mr-2" />
+                )}
                 Auto Generate Semua
               </Button>
 
@@ -331,7 +436,9 @@ export default function KasirListView({ basePath, showGenerateDialog = true }: K
                   disabled={!selectedPendaftaran || generating}
                   className="flex-1 bg-emerald-600 hover:bg-emerald-700"
                 >
-                  {generating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                  {generating && (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  )}
                   Generate
                 </Button>
               </div>

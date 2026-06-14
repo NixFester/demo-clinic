@@ -187,6 +187,7 @@ export default function DashboardPage() {
             {loading
               ? <Loader2 className="h-4 w-4 animate-spin" />
               : <RefreshCw className="h-4 w-4" />}
+              <span className="hidden sm:inline ml-1">Refresh</span>
             {!isDokter(role) && 'Refresh'}
           </button>
         </div>
@@ -214,7 +215,7 @@ export default function DashboardPage() {
                   <div className={`p-3 rounded-xl ${card.color}`}>{card.icon}</div>
                   <div>
                     <p className="text-sm text-gray-500">{card.title}</p>
-                    <p className="text-2xl font-bold">
+                    <p className="text-2xl font-bold truncate">
                       {loading ? '...' : card.value}
                     </p>
                   </div>

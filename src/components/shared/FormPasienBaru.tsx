@@ -10,9 +10,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Save, Loader2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function FormPasienBaru() {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     nik: '',
@@ -63,7 +65,7 @@ export default function FormPasienBaru() {
         <CardHeader><CardTitle className="text-base">Form Pasien</CardTitle></CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
               <div className="space-y-2">
                 <Label>NIK *</Label>
                 <Input value={form.nik} onChange={(e) => setForm({ ...form, nik: e.target.value })} required maxLength={16} placeholder="16 digit NIK" />
@@ -74,7 +76,7 @@ export default function FormPasienBaru() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-4`}>
               <div className="space-y-2">
                 <Label>Tempat Lahir</Label>
                 <Input value={form.tempat_lahir} onChange={(e) => setForm({ ...form, tempat_lahir: e.target.value })} placeholder="Kota kelahiran" />
@@ -97,7 +99,7 @@ export default function FormPasienBaru() {
               <Textarea value={form.alamat} onChange={(e) => setForm({ ...form, alamat: e.target.value })} placeholder="Alamat lengkap" rows={2} />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
               <div className="space-y-2">
                 <Label>No. Telepon</Label>
                 <Input value={form.no_telepon} onChange={(e) => setForm({ ...form, no_telepon: e.target.value })} placeholder="08xxxxxxxxxx" />
@@ -108,7 +110,7 @@ export default function FormPasienBaru() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-3'} gap-4`}>
               <div className="space-y-2">
                 <Label>Golongan Darah</Label>
                 <select value={form.golongan_darah} onChange={(e) => setForm({ ...form, golongan_darah: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">

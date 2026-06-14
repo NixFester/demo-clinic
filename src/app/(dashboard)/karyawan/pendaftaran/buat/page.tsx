@@ -319,7 +319,7 @@ export default function KaryawanPendaftaranBuatPage() {
 
       {/* Dialog Buat Pasien Baru */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Daftarkan Pasien Baru</DialogTitle>
           </DialogHeader>

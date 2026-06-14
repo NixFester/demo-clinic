@@ -17,7 +17,7 @@ interface FinalisasiDialogProps {
 export function FinalisasiDialog({ open, onOpenChange, onConfirm, loading }: FinalisasiDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="max-w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Konfirmasi Finalisasi RME</DialogTitle>
           <DialogDescription>
