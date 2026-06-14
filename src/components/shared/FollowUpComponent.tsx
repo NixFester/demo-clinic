@@ -15,6 +15,13 @@ import { toast } from 'sonner';
 import { generateWALink, formatDateTime } from '@/lib/helpers';
 import { FollowUpListItem, PasienSearchItem, FollowUpStoreData, JenisFollowUp } from '@/types/api-items';
 
+const normalizePhone = (phone: string): string => {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.startsWith('62')) return digits;
+  if (digits.startsWith('0')) return '62' + digits.slice(1);
+  return '62' + digits;
+};
+
 const jenisOptions: { value: JenisFollowUp; label: string }[] = [
   { value: 'konfirmasi', label: 'Konfirmasi Jadwal' },
   { value: 'pengingat', label: 'Pengingat Kunjungan' },
@@ -120,22 +127,21 @@ export default function FollowUpComponent({ pasienSource = 'pasien' }: FollowUpC
   useEffect(() => { fetchData(); fetchPasien(); }, [page]);
 
 const handleJenisChange = (jenis: JenisFollowUp) => {
-  const pasien = pasienList.find(p => p.id === form.id_pasien);
+  const pasien = pasienList.find(p => String(p.id) === String(form.id_pasien));
   const nama = pasien?.nama_lengkap || '{nama}';
   const template = (messageTemplates[jenis] ?? '').replace('{nama}', nama);
-  const wa = pasien?.no_whatsapp ?? '';
-  setForm({ ...form, jenis, pesan: template, wa_link: wa ? generateWALink(wa, template) : '' });
+  const wa = pasien?.no_whatsapp ? normalizePhone(pasien.no_whatsapp) : '';
+  setForm({ ...form, jenis, pesan: template, no_whatsapp: wa, wa_link: wa ? generateWALink(wa, template) : '' });
 };
-
 const handlePasienChange = (id: string) => {
-  const pasien = pasienList.find(p => p.id === Number(id));
+  const pasien = pasienList.find(p => String(p.id) === String(id));
   if (!pasien) {
     setForm({ ...form, id_pasien: Number(id), no_whatsapp: '', pesan: '', wa_link: '' });
     return;
   }
   const nama = pasien.nama_lengkap;
   const template = (messageTemplates[form.jenis] ?? '').replace('{nama}', nama);
-  const wa = pasien.no_whatsapp ?? '';
+  const wa = pasien.no_whatsapp ? normalizePhone(pasien.no_whatsapp) : '';
   setForm({
     ...form,
     id_pasien: Number(id),
@@ -288,8 +294,6 @@ const handlePasienChange = (id: string) => {
                     <TableHead>Pasien</TableHead>
                     <TableHead>Jenis</TableHead>
                     <TableHead>Pesan</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Tanggal</TableHead>
                     <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -299,20 +303,12 @@ const handlePasienChange = (id: string) => {
                       <TableCell className="font-medium">{item.nama_pasien}</TableCell>
                       <TableCell>{jenisOptions.find(j => j.value === item.jenis_followup)?.label || item.jenis_followup}</TableCell>
                       <TableCell className="max-w-[200px] truncate">{item.pesan}</TableCell>
-                      <TableCell>{getStatusBadge(item.status)}</TableCell>
-                      <TableCell>{item.tanggal_kirim ? formatDateTime(item.tanggal_kirim) : '-'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           {item.no_whatsapp && (
                             <Button size="sm" variant="outline" onClick={() => handleKirimWA(item)}>
                               <ExternalLink className="h-3 w-3 mr-1" />
                               Kirim WA
-                            </Button>
-                          )}
-                          {item.status !== 'terkirim' && (
-                            <Button size="sm" variant="ghost" onClick={() => handleMarkSent(item.id)}>
-                              <Check className="h-3 w-3 mr-1" />
-                              Tandai Terkirim
                             </Button>
                           )}
                         </div>
