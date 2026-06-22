@@ -29,8 +29,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useState } from "react";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { useState, useEffect } from "react";
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -95,6 +95,26 @@ export default function Sidebar() {
   const { data: session } = useSession();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [showPahamOverlay, setShowPahamOverlay] = useState(false);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    try {
+      const p = localStorage.getItem("paham");
+      setShowPahamOverlay(p !== "true");
+    } catch (e) {
+      // ignore
+    }
+  }, [isMobile]);
+
+  const handleDismissOverlay = () => {
+    try {
+      localStorage.setItem("paham", "true");
+    } catch (e) {
+      // ignore
+    }
+    setShowPahamOverlay(false);
+  };
 
   if (!session) return null;
 
@@ -107,20 +127,24 @@ export default function Sidebar() {
       <Sheet>
         <SheetTrigger asChild>
           <Button
-            variant="ghost"
+            
             size="icon"
-            className="fixed bottom-3 right-3 z-50 md:hidden"
+            className="fixed bottom-7 right-8 z-50 md:hidden"
           >
             <Menu className="h-5 w-5" />
           </Button>
         </SheetTrigger>
         <SheetContent side="right" className="w-64 p-0">
+          
           <SheetTitle className="p-4 border-b">
             <div className="flex items-center gap-2">
               <Heart className="h-5 w-5 text-emerald-600" />
               <span className="font-bold text-emerald-700 text-sm">SIMKlinik</span>
             </div>
           </SheetTitle>
+          <SheetDescription className="pl-5 text-sm text-gray-500 m-0">
+            Menu Navigasi Mobile
+          </SheetDescription>
           <ScrollArea className="flex-1 py-2">
               {items.map((item) => (
                 <Link
@@ -142,6 +166,28 @@ export default function Sidebar() {
           </ScrollArea>
         </SheetContent>
       </Sheet>
+      {/* Mobile onboarding overlay: shows once until `paham=true` in localStorage */}
+      {showPahamOverlay && (
+        <div
+          className="fixed inset-0 z-[60] md:hidden flex items-end justify-end p-6"
+          onClick={handleDismissOverlay}
+          role="button"
+          aria-label="Dismiss onboarding"
+        >
+          <div className="absolute inset-0 bg-black/40" />
+
+          <div className="absolute bottom-0 right-0 flex flex-col items-end">
+            <div className="mb-14 mr-2">
+              <div className="bg-white text-gray-900 px-3 py-2 rounded-lg shadow-lg text-sm">
+                Ketuk tombol ini untuk membuka navigasi
+              </div>
+              <div className="w-3 h-3 bg-white rotate-45 mt-2 ml-auto" />
+            </div>
+
+            <span className="absolute bottom-6 right-6 w-12 h-12 rounded-full border-2 border-emerald-400 opacity-80 animate-pulse pointer-events-none" />
+          </div>
+        </div>
+      )}
     </>
   );
 }
