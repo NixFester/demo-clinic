@@ -2,6 +2,7 @@
 
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import PageOnboardingOverlay from "@/components/shared/PageOnboardingOverlay";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {children}
           </main>
         </div>
+        <PageOnboardingOverlay />
       </div>
   );
 }
