@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { getRoleLabel } from "@/lib/utils";
@@ -58,7 +59,6 @@ function getNavItems(role: string): NavItem[] {
       { href: "/admin/kasir", label: "Kasir", icon: <Receipt className="h-4 w-4" /> },
       { href: "/admin/pendaftaran/buat", label: "Pendaftaran", icon: <FileText className="h-4 w-4" /> },
       { href: "/admin/followup", label: "Follow Up WA", icon: <MessageSquare className="h-4 w-4" /> },
-      { href: "/admin/pengaturan", label: "Pengaturan", icon: <Settings className="h-4 w-4" /> },
       
     ];
   }
@@ -138,8 +138,8 @@ export default function Sidebar() {
           
           <SheetTitle className="p-4 border-b">
             <div className="flex items-center gap-2">
-              <Heart className="h-5 w-5 text-emerald-600" />
-              <span className="font-bold text-emerald-700 text-sm">SIMKlinik</span>
+              <Image src="/logo-elrhea.png" alt="Elrhea Clinic" width={36} height={36} className="object-contain" />
+              <span className="font-bold text-emerald-700">Elrhea Clinic</span>
             </div>
           </SheetTitle>
           <SheetDescription className="pl-5 text-sm text-gray-500 m-0">
@@ -203,9 +203,12 @@ export default function Sidebar() {
       <div className="flex items-center justify-between p-4 border-b">
         {!collapsed && (
           <div className="flex items-center gap-2">
-            <Heart className="h-5 w-5 text-emerald-600" />
-            <span className="font-bold text-emerald-700 text-sm">SIMKlinik</span>
+            <Image src="/logo-elrhea.png" alt="Elrhea Clinic" width={32} height={32} className="object-contain" />
+            <span className="font-bold text-emerald-700">Elrhea Clinic</span>
           </div>
+        )}
+        {collapsed && (
+          <Image src="/logo-elrhea.png" alt="Elrhea Clinic" width={28} height={28} className="object-contain mx-auto" />
         )}
         <Button
           variant="ghost"

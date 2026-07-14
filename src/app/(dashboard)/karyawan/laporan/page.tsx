@@ -4,38 +4,14 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { formatCurrency, getTodayISO } from '@/lib/helpers';
-import { Download, Loader2 } from 'lucide-react';
+import { Download, Loader2, Users, Wallet, Receipt, UserPlus, CheckCircle, Printer } from 'lucide-react';
 import { toast } from 'sonner';
-
-interface LaporanHarian {
-  total_pasien: number;
-  pasien_baru: number;
-  pasien_lama: number;
-  menunggu: number;
-  dipanggil: number;
-  selesai: number;
-  batal: number;
-  total_pendapatan: number;
-  per_metode?: Array<{
-    metode_pembayaran: string;
-    total: number;
-  }>;
-}
-
-interface LaporanBulanan {
-  total_pasien: number;
-  pasien_baru: number;
-  pasien_lama: number;
-  total_pendapatan: number;
-  per_metode?: Array<{
-    metode_pembayaran: string;
-    total: number;
-  }>;
-}
+import { pdf } from '@react-pdf/renderer';
+import type { LaporanHarian, LaporanBulanan } from '@/types/api-items';
+import { LaporanHarianPDF, LaporanBulananPDF } from '@/components/shared/LaporanPDF';
 
 const bulanOptions = [
   { value: '1', label: 'Januari' }, { value: '2', label: 'Februari' },
@@ -45,6 +21,36 @@ const bulanOptions = [
   { value: '9', label: 'September' }, { value: '10', label: 'Oktober' },
   { value: '11', label: 'November' }, { value: '12', label: 'Desember' },
 ];
+
+function StatCard({ title, value, icon, color }: { title: string; value: string | number; icon: React.ReactNode; color: string }) {
+  return (
+    <Card className={`border ${color.replace('bg-', 'border-').replace('-50', '-200')}`}>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-3">
+          <div className={`p-2.5 rounded-lg ${color}`}>{icon}</div>
+          <div>
+            <p className="text-xs text-gray-500">{title}</p>
+            <p className="text-lg font-bold">{value}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const styles = {
+    lunas: 'bg-green-100 text-green-700',
+    belum_bayar: 'bg-yellow-100 text-yellow-700',
+    batal: 'bg-red-100 text-red-700',
+    draft: 'bg-gray-100 text-gray-700',
+  };
+  return (
+    <span className={`px-2 py-1 rounded text-xs ${styles[status as keyof typeof styles] || 'bg-gray-100'}`}>
+      {status === 'lunas' ? 'Lunas' : status === 'belum_bayar' ? 'Belum Lunas' : status}
+    </span>
+  );
+}
 
 export default function KaryawanLaporanPage() {
   const [activeTab, setActiveTab] = useState('harian');
@@ -60,11 +66,12 @@ export default function KaryawanLaporanPage() {
   const fetchHarian = async (t = tanggal) => {
     setLoadingHarian(true);
     try {
-      const res = await fetch(`/api/laporan/harian?tanggal=${t}`);
+      const res = await fetch("/api/laporan/harian?tanggal=" + t);
       const data = await res.json();
       setHarianData(data);
     } catch (err) {
       console.error('[KaryawanLaporan] Harian error:', err);
+      toast.error('Gagal memuat laporan harian');
     } finally {
       setLoadingHarian(false);
     }
@@ -73,11 +80,12 @@ export default function KaryawanLaporanPage() {
   const fetchBulanan = async () => {
     setLoadingBulanan(true);
     try {
-      const res = await fetch(`/api/laporan/bulanan?bulan=${bulan}&tahun=${tahun}`);
+      const res = await fetch("/api/laporan/bulanan?bulan=" + bulan + "&tahun=" + tahun);
       const data = await res.json();
       setBulananData(data);
     } catch (err) {
       console.error('[KaryawanLaporan] Bulanan error:', err);
+      toast.error('Gagal memuat laporan bulanan');
     } finally {
       setLoadingBulanan(false);
     }
@@ -85,29 +93,67 @@ export default function KaryawanLaporanPage() {
 
   useEffect(() => { fetchHarian(); }, []);
 
-  const handleExport = () => {
-    toast.info('Fitur export akan segera tersedia');
+  const handleExportPDF = async () => {
+    if (activeTab === 'harian' && harianData) {
+      try {
+        const doc = <LaporanHarianPDF data={harianData} tanggal={tanggal} />;
+        const asPdf = pdf(doc);
+        const blob = await asPdf.toBlob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `laporan-harian-${tanggal}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success('Export PDF berhasil');
+      } catch (err) {
+        console.error('[KaryawanLaporan] export error:', err);
+        toast.error('Gagal mengekspor PDF');
+      }
+    } else if (activeTab === 'bulanan' && bulananData) {
+      try {
+        const doc = <LaporanBulananPDF data={bulananData} bulan={bulan} tahun={tahun} />;
+        const asPdf = pdf(doc);
+        const blob = await asPdf.toBlob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `laporan-bulanan-${bulan}-${tahun}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success('Export PDF berhasil');
+      } catch (err) {
+        console.error('[KaryawanLaporan] export error:', err);
+        toast.error('Gagal mengekspor PDF');
+      }
+    } else {
+      toast.info('Tampilkan data terlebih dahulu sebelum export.');
+    }
   };
 
-  const getMetodeLabel = (metode: string) => {
-    const map: Record<string, string> = {
-      tunai: 'Tunai',
-      transfer: 'Transfer',
-      qris: 'QRIS',
-      debit: 'Kartu Debit',
-      credit: 'Kartu Kredit',
-    };
-    return map[metode] || metode;
+  const handlePrint = () => {
+    handleExportPDF();
+    setTimeout(() => window.print(), 500);
   };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <h1 className="text-2xl font-bold">Laporan</h1>
-        <Button variant="outline" className="w-full sm:w-auto" onClick={handleExport}>
-          <Download className="h-4 w-4 mr-2" />
-          Export
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExportPDF}>
+            <Download className="h-4 w-4 mr-2" />
+            Export PDF
+          </Button>
+          <Button variant="outline" onClick={handlePrint}>
+            <Printer className="h-4 w-4 mr-2" />
+            Print
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -121,12 +167,7 @@ export default function KaryawanLaporanPage() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Laporan Harian</CardTitle>
-                <div className="flex gap-2 items-end">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Tanggal</Label>
-                    <Input type="date" value={tanggal} onChange={(e) => { setTanggal(e.target.value); fetchHarian(e.target.value); }} className="w-auto" />
-                  </div>
-                </div>
+                <Input type="date" value={tanggal} onChange={(e) => { setTanggal(e.target.value); fetchHarian(e.target.value); }} className="w-auto" />
               </div>
             </CardHeader>
             <CardContent>
@@ -137,56 +178,45 @@ export default function KaryawanLaporanPage() {
                 </div>
               ) : harianData ? (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-blue-50 rounded-lg text-center">
-                      <p className="text-sm text-gray-600">Total Pasien</p>
-                      <p className="text-2xl font-bold text-blue-700">{harianData.total_pasien || 0}</p>
-                    </div>
-                    <div className="p-4 bg-teal-50 rounded-lg text-center">
-                      <p className="text-sm text-gray-600">Pasien Baru</p>
-                      <p className="text-2xl font-bold text-teal-700">{harianData.pasien_baru || 0}</p>
-                    </div>
-                    <div className="p-4 bg-cyan-50 rounded-lg text-center">
-                      <p className="text-sm text-gray-600">Pasien Lama</p>
-                      <p className="text-2xl font-bold text-cyan-700">{harianData.pasien_lama || 0}</p>
-                    </div>
+                  {/* Main Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <StatCard title="Total Pasien" value={harianData.total_pasien || 0} icon={<Users className="h-5 w-5" />} color="bg-blue-50" />
+                    <StatCard title="Transaksi" value={harianData.total_invoice || 0} icon={<Receipt className="h-5 w-5" />} color="bg-purple-50" />
+                    <StatCard title="Selesai" value={harianData.selesai || 0} icon={<CheckCircle className="h-5 w-5" />} color="bg-green-50" />
+                    <StatCard title="Pasien Baru" value={harianData.pasien_baru || 0} icon={<UserPlus className="h-5 w-5" />} color="bg-teal-50" />
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-4 bg-yellow-50 rounded-lg text-center">
-                      <p className="text-sm text-gray-600">Menunggu</p>
-                      <p className="text-2xl font-bold text-yellow-700">{harianData.menunggu || 0}</p>
-                    </div>
-                    <div className="p-4 bg-sky-50 rounded-lg text-center">
-                      <p className="text-sm text-gray-600">Dipanggil</p>
-                      <p className="text-2xl font-bold text-sky-700">{harianData.dipanggil || 0}</p>
-                    </div>
-                    <div className="p-4 bg-green-50 rounded-lg text-center">
-                      <p className="text-sm text-gray-600">Selesai</p>
-                      <p className="text-2xl font-bold text-green-700">{harianData.selesai || 0}</p>
-                    </div>
-                    <div className="p-4 bg-emerald-50 rounded-lg text-center">
-                      <p className="text-sm text-gray-600">Pendapatan</p>
-                      <p className="text-xl font-bold text-emerald-700">{formatCurrency(harianData.total_pendapatan || 0)}</p>
-                    </div>
-                  </div>
+                  {/* Income Card */}
+                  <Card className="border-emerald-200 bg-emerald-50">
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <p className="text-sm text-emerald-600 uppercase font-medium">Total Pendapatan</p>
+                        <p className="text-3xl font-bold text-emerald-700">{formatCurrency(harianData.total_pendapatan || 0)}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                  {harianData.per_metode && harianData.per_metode.length > 0 && (
+                  {/* Transactions List */}
+                  {harianData.invoices && harianData.invoices.length > 0 && (
                     <Card>
-                      <CardHeader><CardTitle className="text-sm">Breakdown Metode Pembayaran</CardTitle></CardHeader>
+                      <CardHeader className="pb-2"><CardTitle className="text-sm">Daftar Transaksi</CardTitle></CardHeader>
                       <CardContent>
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Metode</TableHead>
+                              <TableHead>Tanggal</TableHead>
+                              <TableHead>Pasien</TableHead>
                               <TableHead className="text-right">Total</TableHead>
+                              <TableHead>Status</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {harianData.per_metode.map((item, i) => (
+                            {harianData.invoices.map((inv, i) => (
                               <TableRow key={i}>
-                                <TableCell>{getMetodeLabel(item.metode_pembayaran)}</TableCell>
-                                <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
+                                <TableCell className="font-mono text-xs">{inv.no_invoice}</TableCell>
+                                <TableCell>{inv.nama_pasien}</TableCell>
+                                <TableCell className="text-right font-medium">{formatCurrency(inv.total)}</TableCell>
+                                <TableCell><StatusBadge status={inv.status} /></TableCell>
                               </TableRow>
                             ))}
                           </TableBody>
@@ -208,18 +238,10 @@ export default function KaryawanLaporanPage() {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">Laporan Bulanan</CardTitle>
                 <div className="flex gap-2 items-end">
-                  <div className="space-y-1">
-                    <Label className="text-xs">Bulan</Label>
-                    <select value={bulan} onChange={(e) => setBulan(e.target.value)} className="rounded-md border border-input bg-background px-3 py-2 text-sm">
-                      {bulanOptions.map(b => (
-                        <option key={b.value} value={b.value}>{b.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">Tahun</Label>
-                    <Input type="number" value={tahun} onChange={(e) => setTahun(e.target.value)} className="w-24" />
-                  </div>
+                  <select value={bulan} onChange={(e) => setBulan(e.target.value)} className="rounded-md border border-input bg-background px-3 py-2 text-sm">
+                    {bulanOptions.map(b => <option key={b.value} value={b.value}>{b.label}</option>)}
+                  </select>
+                  <Input type="number" value={tahun} onChange={(e) => setTahun(e.target.value)} className="w-24" />
                   <Button size="sm" onClick={fetchBulanan} disabled={loadingBulanan}>
                     {loadingBulanan ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Lihat'}
                   </Button>
@@ -234,51 +256,26 @@ export default function KaryawanLaporanPage() {
                 </div>
               ) : bulananData ? (
                 <div className="space-y-6">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-4 bg-blue-50 rounded-lg text-center">
-                      <p className="text-sm text-gray-600">Total Pasien</p>
-                      <p className="text-2xl font-bold text-blue-700">{bulananData.total_pasien || 0}</p>
-                    </div>
-                    <div className="p-4 bg-teal-50 rounded-lg text-center">
-                      <p className="text-sm text-gray-600">Pasien Baru</p>
-                      <p className="text-2xl font-bold text-teal-700">{bulananData.pasien_baru || 0}</p>
-                    </div>
-                    <div className="p-4 bg-cyan-50 rounded-lg text-center">
-                      <p className="text-sm text-gray-600">Pasien Lama</p>
-                      <p className="text-2xl font-bold text-cyan-700">{bulananData.pasien_lama || 0}</p>
-                    </div>
-                    <div className="p-4 bg-emerald-50 rounded-lg text-center">
-                      <p className="text-sm text-gray-600">Total Pendapatan</p>
-                      <p className="text-xl font-bold text-emerald-700">{formatCurrency(bulananData.total_pendapatan || 0)}</p>
-                    </div>
+                  {/* Main Stats */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <StatCard title="Total Pasien" value={bulananData.total_pasien || 0} icon={<Users className="h-5 w-5" />} color="bg-blue-50" />
+                    <StatCard title="Transaksi" value={bulananData.total_invoice || 0} icon={<Receipt className="h-5 w-5" />} color="bg-purple-50" />
+                    <StatCard title="Pasien Baru" value={bulananData.pasien_baru || 0} icon={<UserPlus className="h-5 w-5" />} color="bg-teal-50" />
+                    <StatCard title="Pasien Lama" value={(bulananData.total_pasien || 0) - (bulananData.pasien_baru || 0)} icon={<Users className="h-5 w-5" />} color="bg-cyan-50" />
                   </div>
 
-                  {bulananData.per_metode && bulananData.per_metode.length > 0 && (
-                    <Card>
-                      <CardHeader><CardTitle className="text-sm">Breakdown Metode Pembayaran</CardTitle></CardHeader>
-                      <CardContent>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Metode</TableHead>
-                              <TableHead className="text-right">Total</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {bulananData.per_metode.map((item, i) => (
-                              <TableRow key={i}>
-                                <TableCell>{getMetodeLabel(item.metode_pembayaran)}</TableCell>
-                                <TableCell className="text-right">{formatCurrency(item.total)}</TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </CardContent>
-                    </Card>
-                  )}
+                  {/* Income Card */}
+                  <Card className="border-emerald-200 bg-emerald-50">
+                    <CardContent className="p-6">
+                      <div className="text-center">
+                        <p className="text-sm text-emerald-600 uppercase font-medium">Total Pendapatan Bulan Ini</p>
+                        <p className="text-3xl font-bold text-emerald-700">{formatCurrency(bulananData.total_pendapatan || 0)}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </div>
               ) : (
-                <p className="text-center py-4 text-gray-500">Klik &quot;Lihat&quot; untuk menampilkan laporan bulanan</p>
+                <p className="text-center py-4 text-gray-500">Klik "Lihat" untuk menampilkan laporan bulanan</p>
               )}
             </CardContent>
           </Card>

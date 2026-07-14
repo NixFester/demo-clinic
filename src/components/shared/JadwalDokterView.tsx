@@ -34,14 +34,22 @@ interface DokterOption {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const HARI_OPTIONS = [
-  { value: 'senin',   label: 'Senin' },
-  { value: 'selasa',  label: 'Selasa' },
-  { value: 'rabu',    label: 'Rabu' },
-  { value: 'kamis',   label: 'Kamis' },
-  { value: 'jumat',   label: 'Jumat' },
-  { value: 'sabtu',   label: 'Sabtu' },
-  // ✅ includes minggu (was missing from admin version)
-  { value: 'minggu',  label: 'Minggu' },
+  { value: 'senin', label: 'Senin' },
+  { value: 'selasa', label: 'Selasa' },
+  { value: 'rabu', label: 'Rabu' },
+  { value: 'kamis', label: 'Kamis' },
+  { value: 'jumat', label: 'Jumat' },
+  { value: 'sabtu', label: 'Sabtu' },
+  { value: 'minggu', label: 'Minggu' },
+  { value: 'senin-rabu', label: 'Senin-Rabu' },
+  { value: 'senin-kamis', label: 'Senin-Kamis' },
+  { value: 'senin-jumat', label: 'Senin-Jumat' },
+  { value: 'senin-sabtu', label: 'Senin-Sabtu' },
+  { value: 'rabu-sabtu', label: 'Rabu-Sabtu' },
+  { value: 'kamis-sabtu', label: 'Kamis-Sabtu' },
+  { value: 'jumat-sabtu', label: 'Jumat-Sabtu' },
+  { value: 'sabtu-minggu', label: 'Sabtu-Minggu' },
+  { value: 'kamis-minggu', label: 'Kamis-Minggu' },
 ];
 
 const DEFAULT_FORM = {
@@ -372,16 +380,21 @@ export default function JadwalDokterView({
 
             <div className="space-y-2">
               <Label>Hari *</Label>
-              <select
-                value={form.hari}
-                onChange={(e) => setForm({ ...form, hari: e.target.value })}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                required
-              >
+              <div className="grid grid-cols-3 gap-2">
                 {HARI_OPTIONS.map((h) => (
-                  <option key={h.value} value={h.value}>{h.label}</option>
+                  <label key={h.value} className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-50 text-sm">
+                    <input
+                      type="radio"
+                      name="hari"
+                      value={h.value}
+                      checked={form.hari === h.value}
+                      onChange={(e) => setForm({ ...form, hari: e.target.value })}
+                      className="accent-emerald-600"
+                    />
+                    {h.label}
+                  </label>
                 ))}
-              </select>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

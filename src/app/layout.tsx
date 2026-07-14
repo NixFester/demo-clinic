@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SIMKlinik - Sistem Informasi Manajemen Klinik",
-  description: "Aplikasi manajemen klinik terpadu untuk pendaftaran, antrian, rekam medis, kasir, dan laporan.",
+  title: "Elrhea Clinic - Sistem Informasi Manajemen Klinik",
+  description: "Elrhea Clinic - Sistem informasi manajemen klinik terpadu untuk pendaftaran, antrian, rekam medis, kasir, dan laporan.",
 };
 
 export default function RootLayout({

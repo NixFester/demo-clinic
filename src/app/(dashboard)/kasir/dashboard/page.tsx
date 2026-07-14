@@ -58,12 +58,13 @@ export default function KasirDashboardPage() {
 
   const handleAction = async (item: PendaftaranListItem) => {
     if (!item.id_invoice) {
+      console.log('Generating invoice for:', item);
       setSubmitting(true);
       try {
         const res = await fetch('/api/invoice', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id_pendaftaran: item.id }),
+          body: JSON.stringify({ id_pendaftaran: item.id_pendaftaran }),
         });
         const result = await res.json();
         if (!res.ok) {

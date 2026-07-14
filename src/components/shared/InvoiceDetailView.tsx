@@ -6,11 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Loader2, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Plus, Trash2, Printer, Download } from 'lucide-react';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { toast } from 'sonner';
 import { formatCurrency, formatDateTime } from '@/lib/helpers';
 import { useIsMobile } from "@/hooks/use-mobile";
+import { pdf } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
 
 
 interface PembayaranItem {
@@ -173,6 +175,215 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
     }
   };
 
+  // ─── PDF Styles ─────────────────────────────────────────────────────────────
+  const colors = {
+    primary: '#059669',
+    primaryLight: '#D1FAE5',
+    dark: '#1F2937',
+    gray: '#6B7280',
+    light: '#F9FAFB',
+    border: '#E5E7EB',
+    white: '#FFFFFF',
+    red: '#DC2626',
+    yellow: '#D97706',
+    blue: '#2563EB',
+  };
+
+  const s = StyleSheet.create({
+    page: { padding: 40, fontFamily: 'Helvetica', fontSize: 10, color: colors.dark, backgroundColor: colors.white },
+    header: { marginBottom: 20, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    headerLeft: { flex: 1 },
+    clinicName: { fontSize: 22, fontFamily: 'Helvetica-Bold', color: colors.primary, marginBottom: 3 },
+    clinicAddress: { fontSize: 9, color: colors.gray },
+    headerRight: { alignItems: 'flex-end' },
+    title: { fontSize: 18, fontFamily: 'Helvetica-Bold', color: colors.dark },
+    subtitle: { fontSize: 10, color: colors.gray, marginTop: 2 },
+    divider: { borderBottomWidth: 2, borderBottomColor: colors.primary, marginVertical: 12 },
+    infoRow: { flexDirection: 'row', marginBottom: 4 },
+    infoLabel: { width: 120, fontSize: 9, color: colors.gray },
+    infoValue: { flex: 1, fontSize: 9, fontFamily: 'Helvetica-Bold', color: colors.dark },
+    section: { marginTop: 16 },
+    sectionTitle: { fontSize: 12, fontFamily: 'Helvetica-Bold', color: colors.white, backgroundColor: colors.primary, padding: 6, borderRadius: 4, marginBottom: 8 },
+    table: { borderWidth: 1, borderColor: colors.border, borderRadius: 4, overflow: 'hidden' },
+    tableHeader: { flexDirection: 'row', backgroundColor: colors.primary },
+    tableHeaderCell: { padding: 6, fontSize: 9, fontFamily: 'Helvetica-Bold', color: colors.white },
+    tableRow: { flexDirection: 'row', borderBottomWidth: 1, borderBottomColor: colors.border },
+    tableCell: { padding: 6, fontSize: 9, color: colors.dark },
+    tableCellRight: { padding: 6, fontSize: 9, color: colors.dark, textAlign: 'right' },
+    summaryBox: { backgroundColor: colors.light, borderRadius: 6, padding: 12, marginTop: 12 },
+    summaryRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
+    summaryLabel: { fontSize: 10, color: colors.gray },
+    summaryValue: { fontSize: 10, fontFamily: 'Helvetica-Bold', color: colors.dark },
+    totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderTopWidth: 2, borderTopColor: colors.primary, marginTop: 8 },
+    totalLabel: { fontSize: 14, fontFamily: 'Helvetica-Bold', color: colors.primary },
+    totalValue: { fontSize: 14, fontFamily: 'Helvetica-Bold', color: colors.primary },
+    badgeGreen: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 3, fontSize: 7, backgroundColor: '#DCFCE7', color: '#166534', alignSelf: 'flex-start' },
+    badgeYellow: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 3, fontSize: 7, backgroundColor: '#FEF9C3', color: '#854D0E', alignSelf: 'flex-start' },
+    badgeRed: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 3, fontSize: 7, backgroundColor: '#FEE2E2', color: '#991B1B', alignSelf: 'flex-start' },
+    footer: { position: 'absolute', bottom: 30, left: 40, right: 40, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    footerLine: { borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 6 },
+    footerText: { fontSize: 8, color: colors.gray, textAlign: 'center', width: '100%' },
+  });
+
+  const fmtRp = (v: number) => 'Rp ' + v.toLocaleString('id-ID');
+  const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  const fmtTime = (iso: string) => new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+  const handleExportPDF = async () => {
+    if (!invoice) return;
+    try {
+      const getStatusBadge = (status: string) => {
+        if (status === 'lunas') return s.badgeGreen;
+        if (status === 'belum_bayar') return s.badgeYellow;
+        if (status === 'batal') return s.badgeRed;
+        return {};
+      };
+      const getStatusLabel = (status: string) => {
+        if (status === 'lunas') return 'LUNAS';
+        if (status === 'belum_bayar') return 'BELUM LUNAS';
+        if (status === 'batal') return 'BATAL';
+        return status.toUpperCase();
+      };
+
+      const InvoicePDF = (
+        <Document>
+          <Page size="A4" style={s.page}>
+            <View style={s.header}>
+              <View style={s.headerLeft}>
+                <Text style={s.clinicName}>Elrhea Clinic</Text>
+                <Text style={s.clinicAddress}>Jl Bendo 3, Lempongsari, Gajahmungkur, Semarang, 50231</Text>
+              </View>
+              <View style={s.headerRight}>
+                <Text style={s.title}>INVOICE</Text>
+                <Text style={s.subtitle}>{invoice.no_invoice}</Text>
+              </View>
+            </View>
+            <View style={s.divider} />
+
+            <View style={{ marginBottom: 12 }}>
+              <View style={s.infoRow}>
+                <Text style={s.infoLabel}>Tanggal</Text>
+                <Text style={s.infoValue}>{fmtDate(invoice.created_at)} {fmtTime(invoice.created_at)}</Text>
+              </View>
+              <View style={s.infoRow}>
+                <Text style={s.infoLabel}>Pasien</Text>
+                <Text style={s.infoValue}>{invoice.nama_pasien || '-'}</Text>
+              </View>
+              <View style={s.infoRow}>
+                <Text style={s.infoLabel}>No. RM</Text>
+                <Text style={s.infoValue}>{invoice.no_rekam_medis || '-'}</Text>
+              </View>
+              <View style={s.infoRow}>
+                <Text style={s.infoLabel}>Dokter</Text>
+                <Text style={s.infoValue}>{invoice.nama_dokter || '-'}</Text>
+              </View>
+              <View style={s.infoRow}>
+                <Text style={s.infoLabel}>Kasir</Text>
+                <Text style={s.infoValue}>{invoice.nama_karyawan || '-'}</Text>
+              </View>
+            </View>
+
+            <View style={s.section}>
+              <Text style={s.sectionTitle}>Detail Transaksi</Text>
+              <View style={s.table}>
+                <View style={s.tableHeader}>
+                  <Text style={[s.tableHeaderCell, { width: '5%' }]}>No</Text>
+                  <Text style={[s.tableHeaderCell, { width: '35%' }]}>Nama Item</Text>
+                  <Text style={[s.tableHeaderCell, { width: '15%' }]}>Jenis</Text>
+                  <Text style={[s.tableHeaderCell, { width: '10%' }]}>Qty</Text>
+                  <Text style={[s.tableHeaderCell, { width: '20%' }]}>Harga</Text>
+                  <Text style={[s.tableHeaderCell, { width: '15%' }]}>Subtotal</Text>
+                </View>
+                {invoice.items.map((item, i) => (
+                  <View key={item.id} style={s.tableRow}>
+                    <Text style={[s.tableCell, { width: '5%' }]}>{i + 1}</Text>
+                    <Text style={[s.tableCell, { width: '35%' }]}>{item.nama_item || '-'}</Text>
+                    <Text style={[s.tableCell, { width: '15%' }]}>{item.jenis || '-'}</Text>
+                    <Text style={[s.tableCellRight, { width: '10%' }]}>{item.qty ?? '-'}</Text>
+                    <Text style={[s.tableCellRight, { width: '20%' }]}>{item.harga_satuan !== undefined ? fmtRp(item.harga_satuan) : '-'}</Text>
+                    <Text style={[s.tableCellRight, { width: '15%' }]}>{item.subtotal !== undefined ? fmtRp(item.subtotal) : '-'}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            <View style={s.summaryBox}>
+              <View style={s.summaryRow}>
+                <Text style={s.summaryLabel}>Subtotal</Text>
+                <Text style={s.summaryValue}>{fmtRp(invoice.subtotal || 0)}</Text>
+              </View>
+              {(invoice.diskon || 0) > 0 && (
+                <View style={s.summaryRow}>
+                  <Text style={[s.summaryLabel, { color: colors.yellow }]}>Diskon</Text>
+                  <Text style={[s.summaryValue, { color: colors.yellow }]}>-{fmtRp(invoice.diskon || 0)}</Text>
+                </View>
+              )}
+              <View style={s.totalRow}>
+                <Text style={s.totalLabel}>TOTAL</Text>
+                <Text style={s.totalValue}>{fmtRp(invoice.total || 0)}</Text>
+              </View>
+              {(invoice.total_dibayar || 0) > 0 && (
+                <>
+                  <View style={[s.summaryRow, { marginTop: 8 }]}>
+                    <Text style={[s.summaryLabel, { color: colors.primary }]}>Sudah Dibayar</Text>
+                    <Text style={[s.summaryValue, { color: colors.primary }]}>{fmtRp(invoice.total_dibayar || 0)}</Text>
+                  </View>
+                  <View style={s.summaryRow}>
+                    <Text style={[s.summaryLabel, { color: colors.red }]}>Sisa Tagihan</Text>
+                    <Text style={[s.summaryValue, { color: colors.red }]}>{fmtRp(invoice.total - (invoice.total_dibayar || 0))}</Text>
+                  </View>
+                </>
+              )}
+            </View>
+
+            {invoice.pembayaran && invoice.pembayaran.length > 0 && (
+              <View style={s.section}>
+                <Text style={s.sectionTitle}>Riwayat Pembayaran</Text>
+                {invoice.pembayaran.map((p) => (
+                  <View key={p.id} style={[s.summaryRow, { borderBottomWidth: 1, borderBottomColor: colors.border }]}>
+                    <View>
+                      <Text style={s.summaryValue}>{fmtRp(p.nominal)}</Text>
+                      <Text style={{ fontSize: 8, color: colors.gray }}>{p.metode} - {fmtDate(p.created_at)}</Text>
+                    </View>
+                    {p.kembalian > 0 && (
+                      <Text style={{ fontSize: 9, color: colors.primary }}>Kembalian: {fmtRp(p.kembalian)}</Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+            )}
+
+            <View style={[s.summaryBox, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16 }]}>
+              <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold' }}>Status Pembayaran</Text>
+              <Text style={[s.badgeGreen]}>{getStatusLabel(invoice.status)}</Text>
+            </View>
+
+            <View style={s.footer}>
+              <View style={[s.footerLine, { width: '100%' }]}>
+                <Text style={s.footerText}>Dicetak pada {fmtDate(new Date().toISOString())} — Elrhea Clinic</Text>
+              </View>
+            </View>
+          </Page>
+        </Document>
+      );
+
+      const asPdf = pdf(InvoicePDF);
+      const blob = await asPdf.toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${invoice.no_invoice}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success('Export PDF berhasil');
+    } catch (err) {
+      console.error('[InvoiceDetailView] PDF export error:', err);
+      toast.error('Gagal mengekspor PDF');
+    }
+  };
+
   if (loading) return (
     <div className="flex items-center justify-center py-16">
       <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -208,8 +419,13 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
             {invoice.created_at && ` | ${formatDateTime(invoice.created_at)}`}
           </p>
         </div>
+        <Button size="sm" variant="outline" onClick={handleExportPDF}>
+          <Download className="h-4 w-4 mr-2" />
+          Export PDF
+        </Button>
         <Button size="sm" variant="outline" onClick={handleCetak}>
-          Cetak
+          <Printer className="h-4 w-4 mr-2" />
+          Print Struk
         </Button>
         <StatusBadge status={invoice.status} />
       </div>

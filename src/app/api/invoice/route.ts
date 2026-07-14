@@ -40,18 +40,37 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+
+    // Validate id_pendaftaran if generating for specific pendaftaran
+    if (!body.generate_from_pendaftaran && !body.id_pendaftaran) {
+      return NextResponse.json(
+        { error: "Missing required field: id_pendaftaran" },
+        { status: 400 }
+      );
+    }
+
+    // Add id_karyawan to the request
     body.id_karyawan = parseInt(session.user.id);
-    console.log("[API /invoice] POST generating invoice for pendaftaran:", body.id_pendaftaran);
+
+    // Ensure id_pendaftaran is a number if provided
+    if (body.id_pendaftaran) {
+      body.id_pendaftaran = parseInt(body.id_pendaftaran);
+    }
+
+    console.log("[API /invoice] POST generating invoice with data:", {
+      id_pendaftaran: body.id_pendaftaran,
+      generate_from_pendaftaran: body.generate_from_pendaftaran,
+      id_karyawan: body.id_karyawan
+    });
+
     if (body.generate_from_pendaftaran) {
-      console.log("[API /invoice] POST generating from pendaftaran, additional data:", {
-        id_pendaftaran: body.id_pendaftaran,});
-        const result = await callBridge("invoice.generateMissing", body);
-    return NextResponse.json(result, { status: 201 });
+      const result = await callBridge("invoice.generateMissing", body);
+      return NextResponse.json(result, { status: 201 });
     } else {
       const result = await callBridge("invoice.generate", body);
       return NextResponse.json(result, { status: 201 });
     }
-    
+
   } catch (error: unknown) {
     console.error("[API /invoice] POST error:", error);
     return NextResponse.json(

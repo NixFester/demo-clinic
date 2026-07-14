@@ -269,6 +269,7 @@ export interface PasienRiwayatItem {
 /** pendaftaran.index row */
 export interface PendaftaranListItem extends Timestamps {
   id:              number;
+  id_pendaftaran: number;
   no_antrian:      number;
   tanggal:         string;
   status:          StatusAntrian;
@@ -567,50 +568,162 @@ export interface FollowUpStoreData {
 // followup.tandaiTerkirim → SuccessResponse
 
 // =============================================================================
-// LAPORAN — laporan.harian | .bulanan
+// LAPORAN — laporan.harian | .bulanan | .layanan | .produk | .dokter | .rme | .range
 // =============================================================================
 
 export interface LaporanPerMetode {
-  metode: MetodePembayaran;
+  metode: MetodePembayaran | string;
   total:  number;
 }
 
 export interface LaporanInvoiceItem {
-  no_invoice:  string;
-  total:       number;
-  status:      StatusInvoice;
-  nama_pasien: string;
+  no_invoice:    string;
+  tanggal:       string;
+  nama_pasien:   string;
+  nama_dokter:   string;
+  total:         number;
+  status:        StatusInvoice;
 }
 
+// ─── Service/Product Category Breakdown ────────────────────────────────────────
+
+export interface LaporanPerKategori {
+  kategori: string;
+  total:    number;
+  jumlah:   number;
+}
+
+export interface LaporanTopItem {
+  nama:     string;
+  kategori?: string;
+  jumlah:   number;
+  total:    number;
+}
+
+// ─── Doctor Performance ────────────────────────────────────────────────────────
+
+export interface LaporanPerDokter {
+  nama_dokter:      string;
+  jumlah_pasien:    number;
+  total_pendapatan: number;
+  rata_rata:       number;
+}
+
+// ─── RME Statistics ────────────────────────────────────────────────────────────
+
+export interface LaporanRMEStatus {
+  status:  StatusRME;
+  jumlah:  number;
+}
+
+export interface LaporanRMEDokter {
+  nama_dokter: string;
+  jumlah:      number;
+}
+
+// ─── Enhanced LaporanHarian ────────────────────────────────────────────────────
+
 export interface LaporanHarian {
-  tanggal:           string;
-  total_pendapatan:  number;
-  total_invoice:     number;
-  per_metode:        LaporanPerMetode[];
-  total_pasien:      number;
-  pasien_baru:       number;
-  pasien_lama:       number;
-  invoices:          LaporanInvoiceItem[];
-  selesai:           number;
+  tanggal:              string;
+  total_pendapatan:     number;
+  total_invoice:        number;
+  per_metode:           LaporanPerMetode[];
+  total_pasien:         number;
+  pasien_baru:          number;
+  pasien_lama:          number;
+  selesai:              number;
+  batal:                number;
+  antrian:              number;
+  per_kategori_layanan: LaporanPerKategori[];
+  per_kategori_produk:  LaporanPerKategori[];
+  top_layanan:          LaporanTopItem[];
+  top_produk:           LaporanTopItem[];
+  per_dokter:           LaporanPerDokter[];
+  rme_stats: {
+    total: number;
+    draft: number;
+    final: number;
+  };
+  invoices:             LaporanInvoiceItem[];
 }
 
 export interface LaporanPerHari {
   hari:             string;
   jumlah_invoice:   number;
-  pendapatan:       number;
+  pendapatan:       number | string;
 }
 
+// ─── Enhanced LaporanBulanan ────────────────────────────────────────────────────
+
 export interface LaporanBulanan {
-  bulan:             number;
-  tahun:             number;
-  total_pendapatan:  number;
-  total_invoice:     number;
-  per_metode:        LaporanPerMetode[];
-  total_pasien:      number;
-  pasien_baru:       number;
-  pasien_lama:       number;
-  per_hari:          LaporanPerHari[];
+  bulan:               number;
+  tahun:               number;
+  total_pendapatan:     number;
+  total_invoice:        number;
+  per_metode:           LaporanPerMetode[];
+  total_pasien:         number;
+  pasien_baru:          number;
+  pasien_lama:          number;
+  per_kategori_layanan: LaporanPerKategori[];
+  per_kategori_produk:  LaporanPerKategori[];
+  per_dokter:           LaporanPerDokter[];
+  rme_stats: {
+    total: number;
+    draft: number;
+    final: number;
+  };
+  per_hari:             LaporanPerHari[];
+}
+
+// ─── New Report Types ────────────────────────────────────────────────────────────
+
+export interface LaporanLayanan {
+  tanggal:          string;
+  per_kategori:    LaporanPerKategori[];
+  top_layanan:      LaporanTopItem[];
+  total_pendapatan: number;
+}
+
+export interface LaporanProduk {
+  tanggal:          string;
+  per_kategori:    LaporanPerKategori[];
+  top_produk:       LaporanTopItem[];
+  total_pendapatan: number;
+}
+
+export interface LaporanDokter {
+  tanggal:          string;
+  per_dokter:      LaporanPerDokter[];
+  total_pasien:     number;
+  total_pendapatan: number;
+}
+
+export interface LaporanRME {
+  tanggal:    string;
+  total:      number;
+  per_status: LaporanRMEStatus[];
+  per_dokter: LaporanRMEDokter[];
+}
+
+export interface LaporanRange {
+  tanggal_mulai:        string;
+  tanggal_selesai:      string;
+  total_pendapatan:     number;
+  total_invoice:        number;
+  total_pasien:         number;
+  pasien_baru:          number;
+  pasien_lama:          number;
+  per_metode:           LaporanPerMetode[];
+  per_kategori_layanan: LaporanPerKategori[];
+  per_kategori_produk:  LaporanPerKategori[];
+  per_dokter:           LaporanPerDokter[];
+  per_hari:             LaporanPerHari[];
 }
 
 // laporan.harian  → LaporanHarian (direct object)
 // laporan.bulanan → LaporanBulanan (direct object)
+// laporan.layanan → LaporanLayanan (direct object)
+// laporan.produk  → LaporanProduk (direct object)
+// laporan.dokter  → LaporanDokter (direct object)
+// laporan.rme     → LaporanRME (direct object)
+// laporan.range   → LaporanRange (direct object)

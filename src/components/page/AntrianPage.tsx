@@ -23,7 +23,14 @@ import {
   Loader2,
   ClipboardList,
   Plus,
+  Package,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 import { AntrianItem } from "@/types/api-items";
@@ -85,6 +92,41 @@ export default function AntrianPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  // ── Siapkan Obat Dialog ─────────────────────────────────────────────────
+  const [obatDialogOpen, setObatDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<AntrianItem | null>(null);
+  const [resepList, setResepList] = useState<Record<string, unknown>[]>([]);
+  const [loadingResep, setLoadingResep] = useState(false);
+
+  const openSiapkanObat = async (item: AntrianItem) => {
+    setSelectedItem(item);
+    setObatDialogOpen(true);
+    setLoadingResep(true);
+    setResepList([]);
+
+    if (item.id_rme) {
+      try {
+        const res = await fetch(`/api/rme/${item.id_rme}/resep`);
+        const result = await res.json();
+        // Handle both array response and wrapped response
+        const data = Array.isArray(result) ? result : result.data;
+        if (data && data.length > 0) {
+          setResepList(data);
+        }
+      } catch (err) {
+        console.error("Error fetching resep:", err);
+        toast.error("Gagal memuat daftar obat");
+      }
+    }
+    setLoadingResep(false);
+  };
+
+  const closeObatDialog = () => {
+    setObatDialogOpen(false);
+    setSelectedItem(null);
+    setResepList([]);
+  };
 
   // ── Fetch ────────────────────────────────────────────────────────────────
 
@@ -201,6 +243,19 @@ export default function AntrianPage() {
           >
             <FileText className="h-3 w-3 mr-1" />
             Lihat RME
+          </Button>
+        )}
+
+        {/* SIAPKAN OBAT — karyawan on 'selesai' with RME */}
+        {item.status === "selesai" && role === "karyawan" && item.id_rme && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-amber-700 border-amber-300 hover:bg-amber-50"
+            onClick={() => openSiapkanObat(item)}
+          >
+            <Package className="h-3 w-3 mr-1" />
+            Siapkan Obat
           </Button>
         )}
 
@@ -398,6 +453,64 @@ export default function AntrianPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Siapkan Obat Dialog */}
+      <Dialog open={obatDialogOpen} onOpenChange={setObatDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-amber-600" />
+              Siapkan Obat
+            </DialogTitle>
+          </DialogHeader>
+          {selectedItem && (
+            <div className="space-y-4">
+              <div className="bg-gray-50 rounded-lg p-3 space-y-1">
+                <p className="font-medium">{selectedItem.nama_pasien}</p>
+                <p className="text-sm text-gray-500">
+                  No. RM: {selectedItem.no_rekam_medis}
+                </p>
+              </div>
+
+              {loadingResep ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                  <span className="ml-2 text-gray-500">Memuat daftar obat...</span>
+                </div>
+              ) : resepList.length === 0 ? (
+                <div className="text-center py-6 text-gray-500">
+                  <Package className="h-10 w-10 mx-auto mb-2 text-gray-300" />
+                  <p>Tidak ada obat yang diresepkan</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-700">Daftar Obat:</p>
+                  <ul className="divide-y">
+                    {resepList.map((obat, idx) => (
+                      <li key={idx} className="py-2 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-sm">
+                            {(obat.nama_obat as string) || (obat.nama_produk as string) || `Obat ${idx + 1}`}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {obat.qty as string} {obat.satuan as string} × {obat.dosis as string}
+                          </p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={closeObatDialog}>
+                  Tutup
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 "use client";
 
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 import { getRoleLabel } from "@/lib/utils";
-import { Heart } from "lucide-react";
 
 export default function Header() {
   const { data: session } = useSession();
@@ -12,9 +12,9 @@ export default function Header() {
   return (
     <header className="flex items-center justify-between border-b bg-white px-6 py-3">
       <div className="flex items-center gap-3">
-        <Heart className="h-5 w-5 text-emerald-600" />
-        <h1 className="text-lg font-semibold text-gray-800">
-          Sistem Informasi Manajemen Klinik
+        <Image src="/logo-elrhea.png" alt="Elrhea Clinic" width={40} height={40} className="object-contain" />
+        <h1 className="text-xl font-bold text-emerald-700">
+          Elrhea Clinic
         </h1>
       </div>
       <div className="flex items-center gap-4">

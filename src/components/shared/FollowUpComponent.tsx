@@ -30,10 +30,10 @@ const jenisOptions: { value: JenisFollowUp; label: string }[] = [
 ];
 
 const messageTemplates: Record<string, string> = {
-  konfirmasi: 'Halo {nama}, ini dari Klinik. Kami ingin mengkonfirmasi jadwal kunjungan Anda. Mohon konfirmasi ketersediaan Anda. Terima kasih.',
-  pengingat: 'Halo {nama}, ini pengingat dari Klinik. Kunjungan Anda dijadwalkan besok. Mohon hadir tepat waktu. Terima kasih.',
-  pascakunjungan: 'Halo {nama}, terima kasih telah mengunjungi klinik kami. Semoga lekas sembuh! Jika ada keluhan, jangan ragu untuk menghubungi kami.',
-  kontrol: 'Halo {nama}, ini pengingat dari Klinik. Sudah waktunya untuk kontrol ulang. Silakan buat janji kunjungan kembali. Terima kasih.',
+  konfirmasi: 'Halo {nama}, ini dari Elrhea Clinic. Kami ingin mengkonfirmasi jadwal kunjungan Anda. Mohon konfirmasi ketersediaan Anda. Terima kasih.',
+  pengingat: 'Halo {nama}, ini pengingat dari Elrhea Clinic. Kunjungan Anda dijadwalkan besok. Mohon hadir tepat waktu. Terima kasih.',
+  pascakunjungan: 'Halo {nama}, terima kasih telah mengunjungi Elrhea Clinic. Semoga lekas sembuh! Jika ada keluhan, jangan ragu untuk menghubungi kami.',
+  kontrol: 'Halo {nama}, ini pengingat dari Elrhea Clinic. Sudah waktunya untuk kontrol ulang. Silakan buat janji kunjungan kembali. Terima kasih.',
 };
 
 function getStatusBadge(status: string) {

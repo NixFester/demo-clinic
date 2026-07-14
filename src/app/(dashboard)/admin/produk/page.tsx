@@ -136,11 +136,21 @@ export default function ProdukPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Kategori</Label>
-                  <select value={form.kategori} onChange={(e) => setForm({ ...form, kategori: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <div className="flex flex-wrap gap-3 mt-1">
                     {kategoriOptions.map(k => (
-                      <option key={k.value} value={k.value}>{k.label}</option>
+                      <label key={k.value} className="flex items-center gap-2 cursor-pointer text-sm">
+                        <input
+                          type="radio"
+                          name="kategori"
+                          value={k.value}
+                          checked={form.kategori === k.value}
+                          onChange={(e) => setForm({ ...form, kategori: e.target.value })}
+                          className="accent-emerald-600"
+                        />
+                        {k.label}
+                      </label>
                     ))}
-                  </select>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>Satuan</Label>

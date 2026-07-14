@@ -155,7 +155,7 @@ export default function DashboardPage() {
         <span className="font-semibold text-yellow-600">{stats.menunggu} antrian menunggu</span> dan{' '}
         <span className="font-semibold text-blue-600">{stats.dipanggil} antrian dipanggil</span>.</>
     : isAdmin(role)
-      ? 'Selamat datang di SIMKlinik. Gunakan menu di sebelah kiri untuk mengelola klinik Anda. Data antrian otomatis diperbarui setiap 30 detik.'
+      ? 'Selamat datang di Elrhea Clinic. Gunakan menu di sebelah kiri untuk mengelola klinik Anda. Data antrian otomatis diperbarui setiap 30 detik.'
       : 'Data antrian dan invoice otomatis diperbarui setiap 30 detik. Gunakan menu di sebelah kiri untuk mengelola klinik.';
 
   // ─── Render ───────────────────────────────────────────────────────────────
