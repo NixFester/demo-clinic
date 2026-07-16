@@ -8,25 +8,20 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency, getTodayISO } from '@/lib/helpers';
 import {
-  Download, Loader2, Users, Receipt, UserPlus, CheckCircle,
-  FileText, Calendar, Printer, XCircle, Clock
+  Download, Loader2, Users, Wallet, Receipt, UserPlus, CheckCircle,
+  FileText, Calendar, Scissors, Package, Stethoscope, BarChart3, XCircle, Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { pdf } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
+  ResponsiveContainer, Tooltip
+} from 'recharts';
 import {
   LaporanHarian, LaporanBulanan, LaporanLayanan, LaporanProduk,
   LaporanDokter, LaporanRME, LaporanRange
 } from '@/types/api-items';
-import {
-  LaporanHarianPDF,
-  LaporanBulananPDF,
-  LaporanLayananPDF,
-  LaporanProdukPDF,
-  LaporanDokterPDF,
-  LaporanRMEPDF,
-  LaporanRangePDF,
-} from '@/components/shared/LaporanPDF';
 
 const bulanOptions = [
   { value: '1', label: 'Januari' }, { value: '2', label: 'Februari' },
@@ -246,45 +241,42 @@ export default function LaporanPage() {
 
   useEffect(() => { fetchHarian(); }, []);
 
-  const handleExportPDF = async (tab: string) => {
+   const handleExportPDF = async (tab: string) => {
     try {
-      let doc = null;
-      let filename = '';
-
+      let doc;
       if (tab === 'harian' && harianData) {
-        doc = <LaporanHarianPDF data={harianData} tanggal={tanggal} />;
-        filename = `laporan-harian-${tanggal}`;
+        doc = (
+          <Document>
+            <Page size="A4" style={{ padding: 20 }}>
+              <Text style={{ fontSize: 16, marginBottom: 10 }}>Laporan Harian - {tanggal}</Text>
+              <Text style={{ fontSize: 12, marginBottom: 5 }}>Total Pasien: {harianData.total_pasien}</Text>
+              <Text style={{ fontSize: 12, marginBottom: 5 }}>Total Pendapatan: {formatCurrency(harianData.total_pendapatan)}</Text>
+              <Text style={{ fontSize: 12 }}>Total Invoice: {harianData.total_invoice}</Text>
+            </Page>
+          </Document>
+        );
       } else if (tab === 'bulanan' && bulananData) {
-        doc = <LaporanBulananPDF data={bulananData} bulan={bulan} tahun={tahun} />;
-        filename = `laporan-bulanan-${bulan}-${tahun}`;
-      } else if (tab === 'layanan' && layananData) {
-        doc = <LaporanLayananPDF data={layananData} tanggal={tanggalLayanan} />;
-        filename = `laporan-layanan-${tanggalLayanan}`;
-      } else if (tab === 'produk' && produkData) {
-        doc = <LaporanProdukPDF data={produkData} tanggal={tanggalProduk} />;
-        filename = `laporan-produit-${tanggalProduk}`;
-      } else if (tab === 'dokter' && dokterData) {
-        doc = <LaporanDokterPDF data={dokterData} tanggal={tanggalDokter} />;
-        filename = `laporan-dokter-${tanggalDokter}`;
-      } else if (tab === 'rme' && rmeData) {
-        doc = <LaporanRMEPDF data={rmeData} tanggal={tanggalRme} />;
-        filename = `laporan-rme-${tanggalRme}`;
-      } else if (tab === 'range' && rangeData) {
-        doc = <LaporanRangePDF data={rangeData} mulai={tanggalMulai} selesai={tanggalSelesai} />;
-        filename = `laporan-range-${tanggalMulai}-${tanggalSelesai}`;
-      }
-
-      if (!doc) {
-        toast.info('Tidak ada data untuk diexport. Tampilkan data terlebih dahulu.');
+        doc = (
+          <Document>
+            <Page size="A4" style={{ padding: 20 }}>
+              <Text style={{ fontSize: 16, marginBottom: 10 }}>Laporan Bulanan - {bulan}/{tahun}</Text>
+              <Text style={{ fontSize: 12, marginBottom: 5 }}>Total Pasien: {bulananData.total_pasien}</Text>
+              <Text style={{ fontSize: 12, marginBottom: 5 }}>Total Pendapatan: {formatCurrency(bulananData.total_pendapatan)}</Text>
+              <Text style={{ fontSize: 12 }}>Total Invoice: {bulananData.total_invoice}</Text>
+            </Page>
+          </Document>
+        );
+      } else {
+        toast.info('Tidak ada data untuk diexport');
         return;
       }
-
+      
       const asPdf = pdf(doc);
       const blob = await asPdf.toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = filename + '.pdf';
+      a.download = "laporan-" + tab + "-" + new Date().toISOString().split("T")[0] + ".pdf";
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -296,42 +288,6 @@ export default function LaporanPage() {
     }
   };
 
-  const handlePrint = (tab: string) => {
-    if (tab === 'harian' && !harianData) {
-      toast.info('Tampilkan data harian terlebih dahulu.');
-      return;
-    }
-    if (tab === 'bulanan' && !bulananData) {
-      toast.info('Tampilkan data bulanan terlebih dahulu.');
-      return;
-    }
-    if (tab === 'range' && !rangeData) {
-      toast.info('Tampilkan data range terlebih dahulu.');
-      return;
-    }
-    if (tab === 'layanan' && !layananData) {
-      toast.info('Tampilkan data layanan terlebih dahulu.');
-      return;
-    }
-    if (tab === 'produk' && !produkData) {
-      toast.info('Tampilkan data produk terlebih dahulu.');
-      return;
-    }
-    if (tab === 'dokter' && !dokterData) {
-      toast.info('Tampilkan data dokter terlebih dahulu.');
-      return;
-    }
-    if (tab === 'rme' && !rmeData) {
-      toast.info('Tampilkan data RME terlebih dahulu.');
-      return;
-    }
-    // Open print dialog with the PDF preview in new tab
-    handleExportPDF(tab);
-    setTimeout(() => {
-      window.print();
-    }, 500);
-  };
-
   // ============================================================
   // RENDER
   // ============================================================
@@ -340,16 +296,10 @@ export default function LaporanPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <h1 className="text-2xl font-bold">Laporan & Analisis</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => handleExportPDF(activeTab)}>
-            <Download className="h-4 w-4 mr-2" />
-            Export PDF
-          </Button>
-          <Button variant="outline" onClick={() => handlePrint(activeTab)}>
-            <Printer className="h-4 w-4 mr-2" />
-            Print
-          </Button>
-        </div>
+        <Button variant="outline" onClick={() => handleExportPDF(activeTab)}>
+          <Download className="h-4 w-4 mr-2" />
+          Export PDF
+        </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -377,33 +327,52 @@ export default function LaporanPage() {
             <CardContent>
               {loadingHarian ? <LoadingSkeleton /> : harianData ? (
                 <div className="space-y-6">
-                  {/* Stats */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
                     <StatCard title="Total Pasien" value={harianData.total_pasien || 0} icon={<Users className="h-5 w-5" />} color="bg-blue-50" />
-                    <StatCard title="Transaksi" value={harianData.total_invoice || 0} icon={<Receipt className="h-5 w-5" />} color="bg-purple-50" />
                     <StatCard title="Pasien Baru" value={harianData.pasien_baru || 0} icon={<UserPlus className="h-5 w-5" />} color="bg-teal-50" />
                     <StatCard title="Pasien Lama" value={harianData.pasien_lama || 0} icon={<Users className="h-5 w-5" />} color="bg-cyan-50" />
+                    <StatCard title="Selesai" value={harianData.selesai || 0} icon={<CheckCircle className="h-5 w-5" />} color="bg-green-50" />
+                    <StatCard title="Invoice" value={harianData.total_invoice || 0} icon={<Receipt className="h-5 w-5" />} color="bg-purple-50" />
+                    <StatCard title="Pendapatan" value={formatCurrency(harianData.total_pendapatan || 0)} icon={<Wallet className="h-5 w-5" />} color="bg-emerald-50" />
                   </div>
-
-                  {/* Income Card */}
-                  <Card className="border-emerald-200 bg-emerald-50">
-                    <CardContent className="p-6">
-                      <div className="text-center">
-                        <p className="text-sm text-emerald-600 uppercase font-medium">Total Pendapatan</p>
-                        <p className="text-3xl font-bold text-emerald-700">{formatCurrency(harianData.total_pendapatan || 0)}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Transactions */}
-                  {harianData.invoices && harianData.invoices.length > 0 && (
+                  
+                  {harianData.per_kategori_layanan && harianData.per_kategori_layanan.length > 0 && (
                     <Card>
-                      <CardHeader className="pb-2"><CardTitle className="text-sm">Daftar Transaksi</CardTitle></CardHeader>
+                      <CardHeader className="pb-2"><CardTitle className="text-sm">Kategori Layanan</CardTitle></CardHeader>
+                      <CardContent>
+                        <ResponsiveContainer width="100%" height={200}>
+                          <BarChart data={harianData.per_kategori_layanan.map((k) => ({ name: getKategoriLabel(k.kategori), value: k.total }))}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                            <YAxis tickFormatter={(v) => "Rp " + (v/1000).toFixed(0) + "k"} />
+                            <Tooltip  />
+                            <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {harianData.per_dokter && harianData.per_dokter.length > 0 && (
+                    <Card>
+                      <CardHeader className="pb-2"><CardTitle className="text-sm">Performa Dokter</CardTitle></CardHeader>
                       <CardContent>
                         <Table>
-                          <TableHeader><TableRow><TableHead>No. Invoice</TableHead><TableHead>Pasien</TableHead><TableHead>Dokter</TableHead><TableHead className="text-right">Total</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+                          <TableHeader><TableRow><TableHead>Dokter</TableHead><TableHead className="text-right">Pasien</TableHead><TableHead className="text-right">Pendapatan</TableHead></TableRow></TableHeader>
                           <TableBody>
-                            {harianData.invoices.map((inv, i) => (<TableRow key={i}><TableCell className="font-mono">{inv.no_invoice}</TableCell><TableCell>{inv.nama_pasien}</TableCell><TableCell>{inv.nama_dokter || '-'}</TableCell><TableCell className="text-right">{formatCurrency(inv.total)}</TableCell><TableCell><StatusBadge status={inv.status} /></TableCell></TableRow>))}
+                            {harianData.per_dokter.map((d, i) => (<TableRow key={i}><TableCell>{d.nama_dokter}</TableCell><TableCell className="text-right">{d.jumlah_pasien}</TableCell><TableCell className="text-right">{formatCurrency(d.total_pendapatan)}</TableCell></TableRow>))}
+                          </TableBody>
+                        </Table>
+                      </CardContent>
+                    </Card>
+                  )}
+                  {harianData.invoices && harianData.invoices.length > 0 && (
+                    <Card>
+                      <CardHeader className="pb-2"><CardTitle className="text-sm">Daftar Invoice</CardTitle></CardHeader>
+                      <CardContent>
+                        <Table>
+                          <TableHeader><TableRow><TableHead>No. Invoice</TableHead><TableHead>Pasien</TableHead><TableHead className="text-right">Total</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+                          <TableBody>
+                            {harianData.invoices.map((inv, i) => (<TableRow key={i}><TableCell className="font-mono">{inv.no_invoice}</TableCell><TableCell>{inv.nama_pasien}</TableCell><TableCell className="text-right">{formatCurrency(inv.total)}</TableCell><TableCell><StatusBadge status={inv.status} /></TableCell></TableRow>))}
                           </TableBody>
                         </Table>
                       </CardContent>
@@ -435,35 +404,25 @@ export default function LaporanPage() {
             <CardContent>
               {loadingBulanan ? <LoadingSkeleton /> : bulananData ? (
                 <div className="space-y-6">
-                  {/* Stats */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     <StatCard title="Total Pasien" value={bulananData.total_pasien || 0} icon={<Users className="h-5 w-5" />} color="bg-blue-50" />
-                    <StatCard title="Transaksi" value={bulananData.total_invoice || 0} icon={<Receipt className="h-5 w-5" />} color="bg-purple-50" />
                     <StatCard title="Pasien Baru" value={bulananData.pasien_baru || 0} icon={<UserPlus className="h-5 w-5" />} color="bg-teal-50" />
-                    <StatCard title="Pasien Lama" value={(bulananData.total_pasien || 0) - (bulananData.pasien_baru || 0)} icon={<Users className="h-5 w-5" />} color="bg-cyan-50" />
+                    <StatCard title="Total Invoice" value={bulananData.total_invoice || 0} icon={<Receipt className="h-5 w-5" />} color="bg-purple-50" />
+                    <StatCard title="Total Pendapatan" value={formatCurrency(bulananData.total_pendapatan || 0)} icon={<Wallet className="h-5 w-5" />} color="bg-emerald-50" />
                   </div>
-
-                  {/* Income Card */}
-                  <Card className="border-emerald-200 bg-emerald-50">
-                    <CardContent className="p-6">
-                      <div className="text-center">
-                        <p className="text-sm text-emerald-600 uppercase font-medium">Total Pendapatan</p>
-                        <p className="text-3xl font-bold text-emerald-700">{formatCurrency(bulananData.total_pendapatan || 0)}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* Transactions */}
-                  {bulananData.invoices && bulananData.invoices.length > 0 && (
+                  {bulananData.per_hari && bulananData.per_hari.length > 0 && (
                     <Card>
-                      <CardHeader className="pb-2"><CardTitle className="text-sm">Daftar Transaksi</CardTitle></CardHeader>
+                      <CardHeader className="pb-2"><CardTitle className="text-sm">Pendapatan Harian</CardTitle></CardHeader>
                       <CardContent>
-                        <Table>
-                          <TableHeader><TableRow><TableHead>Tanggal</TableHead><TableHead>Pasien</TableHead><TableHead>Dokter</TableHead><TableHead className="text-right">Total</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
-                          <TableBody>
-                            {bulananData.invoices.map((inv: any, i: number) => (<TableRow key={i}><TableCell>{inv.tanggal || '-'}</TableCell><TableCell>{inv.nama_pasien}</TableCell><TableCell>{inv.nama_dokter || '-'}</TableCell><TableCell className="text-right">{formatCurrency(inv.total)}</TableCell><TableCell><StatusBadge status={inv.status} /></TableCell></TableRow>))}
-                          </TableBody>
-                        </Table>
+                        <ResponsiveContainer width="100%" height={250}>
+                          <BarChart data={bulananData.per_hari}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="hari" tick={{ fontSize: 10 }} />
+                            <YAxis tickFormatter={(v) => "Rp " + (v/1000000).toFixed(1) + "M"} />
+                            <Tooltip  />
+                            <Bar dataKey="pendapatan" fill="#10b981" radius={[4, 4, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
                       </CardContent>
                     </Card>
                   )}

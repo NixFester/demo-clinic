@@ -164,6 +164,19 @@ export default function Sidebar() {
                 </Link>
               ))}
           </ScrollArea>
+
+          {/* Mobile logout */}
+          <div className="p-3 border-t">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+              onClick={() => signOut({ callbackUrl: "/login" })}
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="ml-2">Keluar</span>
+            </Button>
+          </div>
         </SheetContent>
       </Sheet>
       {/* Mobile onboarding overlay: shows once until `paham=true` in localStorage */}

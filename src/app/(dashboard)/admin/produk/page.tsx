@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Pagination } from '@/components/shared/Pagination';
-import { Plus, Pencil, AlertTriangle, Loader2 } from 'lucide-react';
+import { Plus, Pencil, AlertTriangle, Loader2, History } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatCurrency } from '@/lib/helpers';
 import { Produk } from '@/types/api-items';
@@ -22,6 +22,8 @@ const kategoriOptions = [
   { value: 'lainnya', label: 'Lainnya' },
 ];
 
+type FilterAktif = 'aktif' | 'nonaktif' | 'all';
+
 export default function ProdukPage() {
   const [data, setData] = useState<Produk[]>([]);
   const [page, setPage] = useState(1);
@@ -31,15 +33,26 @@ export default function ProdukPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<Produk | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ nama_produk: '', kategori: 'skincare', satuan: '', harga_jual: '', stok: '0', stok_minimum: '5', is_aktif: true });
+  const [filterAktif, setFilterAktif] = useState<FilterAktif>('aktif');
+  const [form, setForm] = useState({ nama_produk: '', kategori: 'skincare', satuan: '', harga_jual: '', stok: '0', stok_minimum: '5', is_aktif: 1 });
 
-  const fetchData = async (p = page) => {
+  const fetchData = async (p = page, filter: FilterAktif = filterAktif) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch(`/api/master/produk?page=${p}`);
+      let url = `/api/master/produk?page=${p}`;
+      if (filter === 'aktif') url += '&aktif=true';
+      // For nonaktif, we don't pass aktif param - the API should return all and we filter
+      const res = await fetch(url);
       const result = await res.json();
-      setData(result.data || []);
+      // Filter locally based on the filter state
+      let filteredData = result.data || [];
+      if (filter === 'aktif') {
+        filteredData = filteredData.filter((item: Produk) => item.is_aktif === 1);
+      } else if (filter === 'nonaktif') {
+        filteredData = filteredData.filter((item: Produk) => item.is_aktif === 0);
+      }
+      setData(filteredData);
       setLastPage(result.last_page || 1);
     } catch (err) {
       console.error('[ProdukPage] Error:', err);
@@ -49,7 +62,12 @@ export default function ProdukPage() {
     }
   };
 
-  useEffect(() => { fetchData(); }, [page]);
+  useEffect(() => {
+    setPage(1);
+    fetchData(1, filterAktif);
+  }, [filterAktif]);
+
+  useEffect(() => { fetchData(page, filterAktif); }, [page, filterAktif]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +80,7 @@ export default function ProdukPage() {
         harga_jual: parseFloat(form.harga_jual),
         stok: parseInt(form.stok),
         stok_minimum: parseInt(form.stok_minimum),
-        is_aktif: form.is_aktif ? 1 : 0,
+        is_aktif: form.is_aktif,
       };
       if (editItem) {
         const res = await fetch(`/api/master/produk/${editItem.id}`, {
@@ -83,7 +101,7 @@ export default function ProdukPage() {
       }
       setDialogOpen(false);
       setEditItem(null);
-      fetchData();
+      fetchData(page, filterAktif);
     } catch (err) {
       toast.error('Gagal menyimpan produk');
     } finally {
@@ -100,15 +118,19 @@ export default function ProdukPage() {
       harga_jual: String(item.harga_jual),
       stok: String(item.stok),
       stok_minimum: String(item.stok_minimum),
-      is_aktif: !!item.is_aktif,
+      is_aktif: item.is_aktif,
     });
     setDialogOpen(true);
   };
 
   const openCreate = () => {
     setEditItem(null);
-    setForm({ nama_produk: '', kategori: 'skincare', satuan: '', harga_jual: '', stok: '0', stok_minimum: '5', is_aktif: true });
+    setForm({ nama_produk: '', kategori: 'skincare', satuan: '', harga_jual: '', stok: '0', stok_minimum: '5', is_aktif: 1 });
     setDialogOpen(true);
+  };
+
+  const toggleFilter = () => {
+    setFilterAktif(prev => prev === 'aktif' ? 'nonaktif' : 'aktif');
   };
 
   const getKategoriLabel = (val: string) => kategoriOptions.find(k => k.value === val)?.label || val;
@@ -117,13 +139,22 @@ export default function ProdukPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <h1 className="text-2xl font-bold">Manajemen Produk</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openCreate} className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Tambah Produk
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={toggleFilter}
+            className="w-full sm:w-auto"
+          >
+            <History className="h-4 w-4 mr-2" />
+            {filterAktif === 'aktif' ? 'Riwayat Nonaktif' : 'Kembali ke Aktif'}
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openCreate} className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Tambah Produk
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-[calc(100%-2rem)] max-h-[90vh] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>{editItem ? 'Edit Produk' : 'Tambah Produk'}</DialogTitle>
@@ -156,6 +187,17 @@ export default function ProdukPage() {
                   <Label>Satuan</Label>
                   <Input value={form.satuan} onChange={(e) => setForm({ ...form, satuan: e.target.value })} required />
                 </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <select
+                    value={form.is_aktif}
+                    onChange={(e) => setForm({ ...form, is_aktif: parseInt(e.target.value) })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value={1}>Aktif</option>
+                    <option value={0}>Nonaktif</option>
+                  </select>
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
@@ -185,7 +227,7 @@ export default function ProdukPage() {
       )}
 
       <Card>
-        <CardHeader><CardTitle className="text-base">Daftar Produk</CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">Daftar Produk {filterAktif === 'nonaktif' ? '(Nonaktif)' : '(Aktif)'}</CardTitle></CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8">
