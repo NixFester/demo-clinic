@@ -367,9 +367,6 @@ export default function AntrianPage() {
                   </div>
                   <div>
                     <p className="font-medium">{item.nama_pasien}</p>
-                    <p className="text-xs text-gray-500">
-                      {item.no_rekam_medis}
-                    </p>
                   </div>
                   {!isDokter(role) && (
                     <p className="text-sm text-gray-600">{item.nama_dokter}</p>
@@ -413,9 +410,6 @@ export default function AntrianPage() {
 
                       <TableCell>
                         <p className="font-medium">{item.nama_pasien}</p>
-                        <p className="text-xs text-gray-500">
-                          {item.no_rekam_medis}
-                        </p>
                       </TableCell>
 
                       {showDokterCol && (
@@ -467,9 +461,6 @@ export default function AntrianPage() {
             <div className="space-y-4">
               <div className="bg-gray-50 rounded-lg p-3 space-y-1">
                 <p className="font-medium">{selectedItem.nama_pasien}</p>
-                <p className="text-sm text-gray-500">
-                  No. RM: {selectedItem.no_rekam_medis}
-                </p>
               </div>
 
               {loadingResep ? (

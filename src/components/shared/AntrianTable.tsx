@@ -102,7 +102,6 @@ export function AntrianTable({ role, idDokter, onCallNext }: AntrianTableProps) 
               <TableCell>
                 <div>
                   <p className="font-medium">{item.nama_pasien}</p>
-                  <p className="text-xs text-gray-500">{item.no_rekam_medis}</p>
                 </div>
               </TableCell>
               <TableCell>{item.nama_dokter}</TableCell>

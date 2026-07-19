@@ -10,7 +10,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Loader2, Eye, Download, Printer } from 'lucide-react';
 import type { PendaftaranListItem } from '@/types/api-items';
 import { toast } from 'sonner';
-import { formatCurrency, formatDateTime } from '@/lib/helpers';
+import { formatCurrency } from '@/lib/helpers';
 import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
 
 export default function KasirLaporanPage() {
@@ -31,8 +31,8 @@ export default function KasirLaporanPage() {
       if (!res.ok) {
         throw new Error(result.error || 'Gagal memuat laporan pembayaran');
       }
-      setData(result.data || []);
-      setLastPage(result.last_page || 1);
+      setData(result.data ?? []);
+      setLastPage(result.last_page ?? 1);
     } catch (err) {
       console.error('[KasirLaporanPage] error:', err);
       setError(err instanceof Error ? err.message : 'Gagal memuat data');
@@ -95,7 +95,7 @@ export default function KasirLaporanPage() {
       return;
     }
     try {
-      const totalAmount = data.reduce((sum, item) => sum + (item.total_harga || 0), 0);
+      const totalAmount = data.reduce((sum, item) => sum + (parseFloat(String(item.total ?? '0')) || 0), 0);
 
       const KasirPDF = (
         <Document>
@@ -129,20 +129,26 @@ export default function KasirLaporanPage() {
             {/* Transactions Table */}
             <View style={s.table}>
               <View style={s.tableHeader}>
-                <Text style={[s.tableHeaderCell, { width: '15%' }]}>No. Antrian</Text>
-                <Text style={[s.tableHeaderCell, { width: '25%' }]}>Nama Pasien</Text>
-                <Text style={[s.tableHeaderCell, { width: '20%' }]}>Tanggal</Text>
-                <Text style={[s.tableHeaderCell, { width: '25%' }]}>Layanan</Text>
-                <Text style={[s.tableHeaderCell, { width: '15%' }]}>Status</Text>
+                <Text style={[s.tableHeaderCell, { width: '20%' }]}>Nama Pasien</Text>
+                <Text style={[s.tableHeaderCell, { width: '15%' }]}>Dokter</Text>
+                <Text style={[s.tableHeaderCell, { width: '15%' }]}>Layanan</Text>
+                <Text style={[s.tableHeaderCell, { width: '15%' }]}>Tanggal</Text>
+                <Text style={[s.tableHeaderCell, { width: '12%' }]}>Total</Text>
+                <Text style={[s.tableHeaderCell, { width: '11%' }]}>Status</Text>
+                <Text style={[s.tableHeaderCell, { width: '12%' }]}>Dibayar</Text>
               </View>
               {data.map((item, i) => (
                 <View key={i} style={s.tableRow}>
-                  <Text style={[s.tableCell, { width: '15%' }]}>{item.no_antrian}</Text>
-                  <Text style={[s.tableCell, { width: '25%' }]}>{item.nama_pasien}</Text>
-                  <Text style={[s.tableCell, { width: '20%' }]}>{item.tanggal ? fmtDate(item.tanggal) : '-'}</Text>
-                  <Text style={[s.tableCell, { width: '25%' }]}>{item.nama_layanan || '-'}</Text>
-                  <View style={{ width: '15%', padding: 6 }}>
-                    <Text style={[s.badgeGreen]}>{item.status_invoice === 'lunas' ? 'LUNAS' : item.status_invoice?.toUpperCase() || 'N/A'}</Text>
+                  <Text style={[s.tableCell, { width: '20%' }]}>{item.nama_pasien}</Text>
+                  <Text style={[s.tableCell, { width: '15%' }]}>{item.nama_dokter}</Text>
+                  <Text style={[s.tableCell, { width: '15%' }]}>{item.nama_layanan || '-'}</Text>
+                  <Text style={[s.tableCell, { width: '15%' }]}>{item.tanggal ? fmtDate(item.tanggal) : '-'}</Text>
+                  <Text style={[s.tableCell, { width: '12%' }]}>{fmtRp(parseFloat(String(item.total ?? '0')) || 0)}</Text>
+                  <View style={{ width: '11%', padding: 6 }}>
+                    <Text style={s.badgeGreen}>{item.status_invoice === 'lunas' ? 'LUNAS' : item.status_invoice?.toUpperCase() || 'N/A'}</Text>
+                  </View>
+                  <View style={{ width: '12%', padding: 6 }}>
+                    <Text style={s.badgeGreen}>{fmtRp(parseFloat(String(item.total_dibayar ?? '0')) || 0)}</Text>
                   </View>
                 </View>
               ))}
@@ -178,7 +184,7 @@ export default function KasirLaporanPage() {
     setTimeout(() => window.print(), 500);
   };
 
-  const totalAmount = data.reduce((sum, item) => sum + (item.total_harga || 0), 0);
+  const totalAmount = data.reduce((sum, item) => sum + (parseFloat(String(item.total ?? '0')) || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -240,10 +246,14 @@ export default function KasirLaporanPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>No. Invoice</TableHead>
                     <TableHead>No. Antrian</TableHead>
-                    <TableHead>Nama</TableHead>
-                    <TableHead>Tanggal</TableHead>
+                    <TableHead>Pasien</TableHead>
+                    <TableHead>Dokter</TableHead>
                     <TableHead>Layanan</TableHead>
+                    <TableHead>Jenis</TableHead>
+                    <TableHead className="text-right">Subtotal</TableHead>
+                    <TableHead className="text-right">Diskon</TableHead>
                     <TableHead className="text-right">Total</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Aksi</TableHead>
@@ -252,18 +262,29 @@ export default function KasirLaporanPage() {
                 <TableBody>
                   {data.length === 0 ? (
                     <TableRow key="empty">
-                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={11} className="text-center py-8 text-gray-500">
                         Tidak ada laporan pembayaran.
                       </TableCell>
                     </TableRow>
                   ) : (
                     data.map((item, index) => (
-                      <TableRow key={item.id ?? index}>
+                      <TableRow key={item.id_pendaftaran ?? index}>
+                        <TableCell className="font-mono text-xs">{item.no_invoice ?? '-'}</TableCell>
                         <TableCell className="font-mono">{item.no_antrian}</TableCell>
-                        <TableCell>{item.nama_pasien}</TableCell>
-                        <TableCell>{item.tanggal ? formatDateTime(item.tanggal) : '-'}</TableCell>
+                        <TableCell>
+                          <div className="font-medium">{item.nama_pasien}</div>
+                          <div className="text-xs text-gray-400">{item.no_rekam_medis}</div>
+                        </TableCell>
+                        <TableCell>{item.nama_dokter}</TableCell>
                         <TableCell>{item.nama_layanan || '-'}</TableCell>
-                        <TableCell className="text-right font-medium">{formatCurrency(item.total_harga || 0)}</TableCell>
+                        <TableCell>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${item.jenis_kunjungan === 'baru' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}>
+                            {item.jenis_kunjungan === 'baru' ? 'Baru' : item.jenis_kunjungan === 'kontrol' ? 'Kontrol' : item.jenis_kunjungan}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">{formatCurrency(parseFloat(String(item.subtotal ?? '0')) || 0)}</TableCell>
+                        <TableCell className="text-right text-red-500">{formatCurrency(parseFloat(String(item.diskon ?? '0')) || 0)}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(parseFloat(String(item.total ?? '0')) || 0)}</TableCell>
                         <TableCell>
                           <StatusBadge status={item.status_invoice || 'lunas'} />
                         </TableCell>

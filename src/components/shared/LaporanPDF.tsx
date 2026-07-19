@@ -87,7 +87,7 @@ function StatCard({ label, value, color = colors.primary }: { label: string; val
 }
 
 function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { style: object; label: string }> = {
+  const map: Record<string, { style: Record<string, any>; label: string }> = {
     lunas: { style: s.badgeGreen, label: 'LUNAS' },
     belum_bayar: { style: s.badgeYellow, label: 'BELUM LUNAS' },
     batal: { style: s.badgeRed, label: 'BATAL' },
@@ -264,15 +264,14 @@ export function LaporanRangePDF({ data, mulai, selesai }: { data: LaporanRange; 
 
         {data.per_hari && data.per_hari.length > 0 && (
           <View style={s.section}>
-            <Text style={s.sectionTitle}>Pendapatan Harian</Text>
+            <Text style={s.sectionTitle}>Ringkasan per Hari</Text>
             <PDFTable
-              headers={['Tanggal', 'Jumlah Pasien', 'Jumlah Transaksi', 'Total Pendapatan']}
-              colWidths={[30, 22, 20, 28]}
+              headers={['Tanggal', 'Jumlah Transaksi', 'Total Pendapatan']}
+              colWidths={[40, 30, 30]}
               rows={data.per_hari.map(d => [
-                d.hari,
-                { text: String(d.jumlah_pasien ?? 0), align: 'right' },
+                fmtDate(d.hari),
                 { text: String(d.jumlah_invoice ?? 0), align: 'right' },
-                { text: fmtRp(d.pendapatan ?? 0), align: 'right' },
+                { text: fmtRp(parseFloat(String(d.pendapatan)) || 0), align: 'right' },
               ])}
             />
           </View>

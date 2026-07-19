@@ -12,12 +12,21 @@ import {
   FileText, Calendar, Scissors, Package, Stethoscope, BarChart3, XCircle, Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Document, Page, Text, View, StyleSheet, pdf } from '@react-pdf/renderer';
+import { pdf } from '@react-pdf/renderer';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
   ResponsiveContainer, Tooltip
 } from 'recharts';
+import {
+  LaporanHarianPDF,
+  LaporanBulananPDF,
+  LaporanLayananPDF,
+  LaporanProdukPDF,
+  LaporanDokterPDF,
+  LaporanRMEPDF,
+  LaporanRangePDF,
+} from '@/components/shared/LaporanPDF';
 import {
   LaporanHarian, LaporanBulanan, LaporanLayanan, LaporanProduk,
   LaporanDokter, LaporanRME, LaporanRange
@@ -243,34 +252,26 @@ export default function LaporanPage() {
 
    const handleExportPDF = async (tab: string) => {
     try {
-      let doc;
+      let doc: React.ReactElement | null = null;
       if (tab === 'harian' && harianData) {
-        doc = (
-          <Document>
-            <Page size="A4" style={{ padding: 20 }}>
-              <Text style={{ fontSize: 16, marginBottom: 10 }}>Laporan Harian - {tanggal}</Text>
-              <Text style={{ fontSize: 12, marginBottom: 5 }}>Total Pasien: {harianData.total_pasien}</Text>
-              <Text style={{ fontSize: 12, marginBottom: 5 }}>Total Pendapatan: {formatCurrency(harianData.total_pendapatan)}</Text>
-              <Text style={{ fontSize: 12 }}>Total Invoice: {harianData.total_invoice}</Text>
-            </Page>
-          </Document>
-        );
+        doc = <LaporanHarianPDF data={harianData} tanggal={tanggal} />;
       } else if (tab === 'bulanan' && bulananData) {
-        doc = (
-          <Document>
-            <Page size="A4" style={{ padding: 20 }}>
-              <Text style={{ fontSize: 16, marginBottom: 10 }}>Laporan Bulanan - {bulan}/{tahun}</Text>
-              <Text style={{ fontSize: 12, marginBottom: 5 }}>Total Pasien: {bulananData.total_pasien}</Text>
-              <Text style={{ fontSize: 12, marginBottom: 5 }}>Total Pendapatan: {formatCurrency(bulananData.total_pendapatan)}</Text>
-              <Text style={{ fontSize: 12 }}>Total Invoice: {bulananData.total_invoice}</Text>
-            </Page>
-          </Document>
-        );
+        doc = <LaporanBulananPDF data={bulananData} bulan={bulan} tahun={tahun} />;
+      } else if (tab === 'layanan' && layananData) {
+        doc = <LaporanLayananPDF data={layananData} tanggal={tanggalLayanan} />;
+      } else if (tab === 'produk' && produkData) {
+        doc = <LaporanProdukPDF data={produkData} tanggal={tanggalProduk} />;
+      } else if (tab === 'dokter' && dokterData) {
+        doc = <LaporanDokterPDF data={dokterData} tanggal={tanggalDokter} />;
+      } else if (tab === 'rme' && rmeData) {
+        doc = <LaporanRMEPDF data={rmeData} tanggal={tanggalRme} />;
+      } else if (tab === 'range' && rangeData) {
+        doc = <LaporanRangePDF data={rangeData} mulai={tanggalMulai} selesai={tanggalSelesai} />;
       } else {
         toast.info('Tidak ada data untuk diexport');
         return;
       }
-      
+
       const asPdf = pdf(doc);
       const blob = await asPdf.toBlob();
       const url = URL.createObjectURL(blob);

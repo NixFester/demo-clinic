@@ -180,7 +180,7 @@ export default function PendaftaranBuatPage() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="p-3 bg-emerald-50 rounded-lg text-sm text-emerald-700">
-                Pasien: {selectedPasien.nama_lengkap} ({selectedPasien.no_rekam_medis || selectedPasien.nik})
+                Pasien: {selectedPasien.nama_lengkap} ({selectedPasien.nik})
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

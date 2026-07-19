@@ -60,12 +60,18 @@ export default function LayananPage() {
     try {
       const res = await fetch(`/api/master/layanan?page=${p}`);
       const result = await res.json();
-      let filteredData = result.data || [];
+      let filteredData = (result.data || []).map((item: Record<string, unknown>) => ({
+        ...item,
+        id: Number(item.id),
+        harga: parseFloat(String(item.harga)),
+        durasi_menit: Number(item.durasi_menit),
+        is_aktif: Number(item.is_aktif) as 0 | 1,
+      }));
       // Filter based on current filter state
       if (filterAktif === 'aktif') {
-        filteredData = filteredData.filter((item: Layanan) => item.is_aktif === 1);
+        filteredData = filteredData.filter((item: { is_aktif: number }) => item.is_aktif === 1);
       } else {
-        filteredData = filteredData.filter((item: Layanan) => item.is_aktif === 0);
+        filteredData = filteredData.filter((item: { is_aktif: number }) => item.is_aktif === 0);
       }
       setData(filteredData);
       setLastPage(result.last_page || 1);

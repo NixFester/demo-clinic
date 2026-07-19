@@ -270,10 +270,6 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
                 <Text style={s.infoValue}>{invoice.nama_pasien || '-'}</Text>
               </View>
               <View style={s.infoRow}>
-                <Text style={s.infoLabel}>No. RM</Text>
-                <Text style={s.infoValue}>{invoice.no_rekam_medis || '-'}</Text>
-              </View>
-              <View style={s.infoRow}>
                 <Text style={s.infoLabel}>Dokter</Text>
                 <Text style={s.infoValue}>{invoice.nama_dokter || '-'}</Text>
               </View>
@@ -415,7 +411,6 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
           <h1 className="text-2xl font-bold">Detail Invoice</h1>
           <p className="text-sm text-gray-500">
             {invoice.no_invoice} | {invoice.nama_pasien}
-            {invoice.no_rekam_medis && ` | ${invoice.no_rekam_medis}`}
             {invoice.created_at && ` | ${formatDateTime(invoice.created_at)}`}
           </p>
         </div>
@@ -489,13 +484,6 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
             <span>Subtotal</span>
             <span>{formatCurrency(invoice.subtotal || 0)}</span>
           </div>
-          {(invoice.diskon || 0) > 0 && (
-            <div className="flex justify-between text-sm text-yellow-600">
-              {/* ✅ Show diskon as formatted currency, not raw percentage number */}
-              <span>Diskon</span>
-              <span>-{formatCurrency(invoice.diskon || 0)}</span>
-            </div>
-          )}
           <div className="flex justify-between font-bold text-lg border-t pt-2">
             <span>Total</span>
             <span>{formatCurrency(invoice.total || 0)}</span>
@@ -538,31 +526,6 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
                   </span>
                 </div>
               ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Diskon Form */}
-      {isBelumBayar && (
-        <Card>
-          <CardHeader><CardTitle className="text-base">Terapkan Diskon</CardTitle></CardHeader>
-          <CardContent>
-            <div className="flex gap-3 items-end">
-              <div className="space-y-2 flex-1">
-                <Label>Diskon (%)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={diskonPersen}
-                  onChange={(e) => setDiskonPersen(e.target.value)}
-                  placeholder="0"
-                />
-              </div>
-              <Button onClick={handleApplyDiskon} disabled={!diskonPersen || applyingDiskon}>
-                {applyingDiskon ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Terapkan'}
-              </Button>
             </div>
           </CardContent>
         </Card>

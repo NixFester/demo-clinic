@@ -62,7 +62,7 @@ export function PasienSearch({ onSelect, selectedId }: PasienSearchProps) {
         <div className="flex items-center gap-2 p-2 border rounded-lg bg-emerald-50 border-emerald-200">
           <div className="flex-1">
             <p className="font-medium text-sm">{selected.nama_lengkap}</p>
-            <p className="text-xs text-gray-500">{selected.no_rekam_medis} - NIK: {selected.nik}</p>
+            <p className="text-xs text-gray-500">NIK: {selected.nik}</p>
           </div>
           <button
             type="button"
@@ -99,7 +99,7 @@ export function PasienSearch({ onSelect, selectedId }: PasienSearchProps) {
                   className="w-full text-left px-3 py-2 hover:bg-emerald-50 border-b last:border-b-0"
                 >
                   <p className="font-medium text-sm">{p.nama_lengkap}</p>
-                  <p className="text-xs text-gray-500">{p.no_rekam_medis} - NIK: {p.nik}</p>
+                  <p className="text-xs text-gray-500">NIK: {p.nik}</p>
                 </button>
               ))}
             </div>

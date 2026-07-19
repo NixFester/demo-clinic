@@ -64,7 +64,7 @@ export default function PasienDetailPage() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold">Detail Pasien</h1>
-          <p className="text-sm text-gray-500">{pasien.no_rekam_medis} - {pasien.nama_lengkap}</p>
+          <p className="text-sm text-gray-500">{pasien.nama_lengkap}</p>
         </div>
       </div>
 
@@ -72,7 +72,6 @@ export default function PasienDetailPage() {
         <Card>
           <CardHeader><CardTitle className="text-base">Informasi Pribadi</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <InfoRow label="No. Rekam Medis" value={pasien.no_rekam_medis} />
             <InfoRow label="NIK" value={pasien.nik} />
             <InfoRow label="Nama Lengkap" value={pasien.nama_lengkap} />
             <InfoRow label="Tempat, Tanggal Lahir" value={`${pasien.tempat_lahir || '-'}, ${pasien.tanggal_lahir ? formatDate(pasien.tanggal_lahir) : '-'}`} />

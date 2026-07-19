@@ -56,7 +56,7 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
             <div>
               <CardTitle className="text-lg">Invoice {invoice.no_invoice}</CardTitle>
               <p className="text-sm text-gray-500 mt-1">
-                {invoice.nama_pasien} - {invoice.no_rekam_medis}
+                {invoice.nama_pasien}
               </p>
               <p className="text-sm text-gray-500">Dokter: {invoice.nama_dokter}</p>
             </div>

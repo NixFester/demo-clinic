@@ -42,7 +42,7 @@ export default function FormPasienBaru() {
       });
       const result = await res.json();
       if (res.ok) {
-        toast.success(`Pasien berhasil ditambahkan! No. RM: ${result.no_rekam_medis}`);
+        toast.success(`Pasien berhasil ditambahkan!`);
          if (
               session?.user?.role === 'admin' ||
               session?.user?.role === 'superadmin'

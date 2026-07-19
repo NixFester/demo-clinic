@@ -49,7 +49,6 @@ export function buildReceiptElement(invoice: InvoiceDetail) {
       {/* ── Pasien Info ── */}
       <Text bold>Pasien:</Text>
       <Text>{invoice.nama_pasien || '-'}</Text>
-      <Row left="No. RM" right={invoice.no_rekam_medis || '-'} />
       <Row left="Dokter" right={invoice.nama_dokter || '-'} />
       <Row left="Kasir" right={invoice.nama_karyawan || '-'} />
       <Line />
@@ -149,9 +148,6 @@ export function InvoiceThermalPrint({ invoice }: Props) {
       <div className="mb-2">
         <p className="font-bold text-[10px] mb-1">Pasien:</p>
         <p className="text-[11px]">{invoice.nama_pasien || '-'}</p>
-        <div className="flex justify-between text-[10px]">
-          <span>No. RM: {invoice.no_rekam_medis || '-'}</span>
-        </div>
         <div className="flex justify-between text-[10px]">
           <span>Dokter: {invoice.nama_dokter || '-'}</span>
         </div>

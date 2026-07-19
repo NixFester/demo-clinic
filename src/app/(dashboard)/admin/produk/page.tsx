@@ -46,11 +46,18 @@ export default function ProdukPage() {
       const res = await fetch(url);
       const result = await res.json();
       // Filter locally based on the filter state
-      let filteredData = result.data || [];
+      let filteredData = (result.data || []).map((item: Record<string, unknown>) => ({
+        ...item,
+        id: Number(item.id),
+        harga_jual: parseFloat(String(item.harga_jual)),
+        stok: Number(item.stok),
+        stok_minimum: Number(item.stok_minimum),
+        is_aktif: Number(item.is_aktif) as 0 | 1,
+      }));
       if (filter === 'aktif') {
-        filteredData = filteredData.filter((item: Produk) => item.is_aktif === 1);
+        filteredData = filteredData.filter((item: { is_aktif: number }) => item.is_aktif === 1);
       } else if (filter === 'nonaktif') {
-        filteredData = filteredData.filter((item: Produk) => item.is_aktif === 0);
+        filteredData = filteredData.filter((item: { is_aktif: number }) => item.is_aktif === 0);
       }
       setData(filteredData);
       setLastPage(result.last_page || 1);
@@ -221,6 +228,7 @@ export default function ProdukPage() {
           </DialogContent>
         </Dialog>
       </div>
+    </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">{error}</div>

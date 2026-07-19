@@ -93,7 +93,6 @@ export default function KaryawanPasienPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>No. RM</TableHead>
                     <TableHead>NIK</TableHead>
                     <TableHead>Nama</TableHead>
                     <TableHead>Telepon</TableHead>
@@ -105,12 +104,11 @@ export default function KaryawanPasienPage() {
                 <TableBody>
                   {data.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">Tidak ada data pasien</TableCell>
+                      <TableCell colSpan={6} className="text-center py-8 text-gray-500">Tidak ada data pasien</TableCell>
                     </TableRow>
                   ) : (
                     data.map((p) => (
                       <TableRow key={p.id}>
-                        <TableCell className="font-mono">{p.no_rekam_medis}</TableCell>
                         <TableCell>{p.nik}</TableCell>
                         <TableCell className="font-medium">{p.nama_lengkap}</TableCell>
                         <TableCell>{p.no_telepon || '-'}</TableCell>

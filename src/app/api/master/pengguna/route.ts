@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (session.user.role !== "admin" && session.user.role !== "superadmin") {
+    if (session.user.role !== "admin" && session.user.role !== "superadmin" && session.user.role !== "karyawan") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (session.user.role !== "admin" && session.user.role !== "superadmin") {
+    if (session.user.role !== "admin" && session.user.role !== "superadmin" && session.user.role !== "karyawan") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -222,7 +222,7 @@ const handlePasienChange = (id: string) => {
                 >
                   <option value="">Pilih pasien...</option>
                   {pasienList.map((p) => (
-                    <option key={p.id} value={p.id}>{p.nama_lengkap} ({p.no_rekam_medis})</option>
+                    <option key={p.id} value={p.id}>{p.nama_lengkap} ({p.nik})</option>
                   ))}
                 </select>
               </div>

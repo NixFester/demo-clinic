@@ -275,9 +275,15 @@ export interface PendaftaranListItem extends Timestamps {
   status:          StatusAntrian;
   jenis_kunjungan: JenisKunjungan;
   nama_pasien:     string;
+  no_rekam_medis:  string;
   nama_dokter:     string;
+  nama_layanan:    string | null;
   id_invoice?:     number | null;
   no_invoice?:     string | null;
+  subtotal?:       string | number;
+  diskon?:         string | number;
+  total?:          string | number;
+  total_dibayar?:  string | number;
   status_invoice?: StatusInvoice | null;
 }
 

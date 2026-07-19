@@ -61,7 +61,7 @@ export default function RMEDetailPage() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold">RME - {rme.nama_pasien}</h1>
-            <p className="text-sm text-gray-500">No. RM: {rme.no_rekam_medis} | Dokter: {rme.nama_dokter} | {(rme.updated_at && formatDateTime(rme.updated_at))}</p>
+            <p className="text-sm text-gray-500">Dokter: {rme.nama_dokter} | {(rme.updated_at && formatDateTime(rme.updated_at))}</p>
           </div>
         </div>
         <StatusBadge status={rme.status} />

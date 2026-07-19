@@ -61,7 +61,7 @@ export default function PasienListPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Total: {total} pasien</CardTitle>
-          <SearchInput value={search} onChange={handleSearch} placeholder="Cari nama/NIK/RM..." />
+          <SearchInput value={search} onChange={handleSearch} placeholder="Cari nama/NIK..." />
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -73,7 +73,6 @@ export default function PasienListPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>No. RM</TableHead>
                   <TableHead>NIK</TableHead>
                   <TableHead>Nama</TableHead>
                   <TableHead>Telepon</TableHead>
@@ -88,7 +87,6 @@ export default function PasienListPage() {
                 ) : (
                   data.map((p) => (
                     <TableRow key={p.id}>
-                      <TableCell className="font-mono">{p.no_rekam_medis}</TableCell>
                       <TableCell>{p.nik}</TableCell>
                       <TableCell className="font-medium">{p.nama_lengkap}</TableCell>
                       <TableCell>{p.no_telepon || '-'}</TableCell>
