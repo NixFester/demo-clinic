@@ -248,6 +248,7 @@ export default function LaporanPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (activeTab === 'harian' && !harianData) fetchHarian();
     if (activeTab === 'bulanan' && !bulananData) fetchBulanan();
