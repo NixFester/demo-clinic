@@ -387,6 +387,7 @@ export interface AntrianItem {
   nama_paket?:     string | null;
   total_kunjungan?: number;
   sisa_kunjungan?: number;
+  last_visit_date?: string | null;
 }
 
 // antrian.hari_ini → ListResponse<AntrianItem>

@@ -198,12 +198,14 @@ export default function AntrianPage() {
     }
   };
 
-  const goToRME = (id: string) => router.push(`/dokter/rme/${parseInt(id)}`);
+  const goToRME = (id: string) => router.push(`/dokter/rme/buat/${parseInt(id)}`);
 
   // ── Row actions (role-aware) ──────────────────────────────────────────────
 
   function RowActions({ item }: { item: AntrianItem }) {
     const busy = busyId === item.id;
+    const todayStr = new Date().toISOString().split('T')[0];
+    const isTodayVisit = item.tanggal === todayStr || item.last_visit_date === todayStr;
 
     return (
       <div className="flex items-center justify-end gap-2">
@@ -227,7 +229,7 @@ export default function AntrianPage() {
         )}
 
         {/* PASIEN DATANG — untuk Paket Kunjungan yg masih ada sisa */}
-        {item.status === "selesai" && (item.sisa_kunjungan ?? 0) > 0 && isStaff(role) && (
+        {item.status === "selesai" && (item.sisa_kunjungan ?? 0) > 0 && !isTodayVisit && isStaff(role) && (
           <Button
             size="sm"
             className="bg-purple-600 hover:bg-purple-700 text-white"
@@ -270,7 +272,7 @@ export default function AntrianPage() {
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => router.push(`/dokter/rme/${item.id_rme}`)}
+            onClick={() => router.push(`/dokter/rme/${item.id_pendaftaran ?? item.id}`)}
           >
             <FileText className="h-3 w-3 mr-1" />
             Lihat RME

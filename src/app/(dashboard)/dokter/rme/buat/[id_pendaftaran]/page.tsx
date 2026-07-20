@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, FileCheck, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, FileCheck, Loader2, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Diagnosa } from '@/types/api-items';
 
@@ -23,10 +24,37 @@ interface PendaftaranData {
   nama_layanan: string; keluhan_utama: string;
 }
 
+const STEPS = [
+  { label: 'SOAP & Diagnosa', step: 1 },
+  { label: 'Tindakan',        step: 2 },
+  { label: 'Resep Obat',      step: 3 },
+];
+
+function StepBreadcrumb({ current }: { current: number }) {
+  return (
+    <nav className="flex items-center gap-1 text-sm flex-wrap">
+      {STEPS.map((s, i) => {
+        const active  = s.step === current;
+        return (
+          <span key={s.step} className="flex items-center gap-1">
+            {i > 0 && <ChevronRight className="h-3.5 w-3.5 text-gray-400 shrink-0" />}
+            <span className={active ? 'font-semibold text-emerald-700' : 'text-gray-400'}>
+              {s.step}.{' '} <span className="hidden sm:inline">{s.label}</span>
+            </span>
+          </span>
+        );
+      })}
+    </nav>
+  );
+}
+
 export default function RMEBuatPage() {
   const { id_pendaftaran: idPendaftaran } = useParams() as { id_pendaftaran: string };
   const router = useRouter();
+  const { data: session } = useSession();
+  const role = session?.user?.role;
 
+  const [step,          setStep]          = useState(1);
   const [pendaftaran,  setPendaftaran]  = useState<PendaftaranData | null>(null);
   const [rmeId,        setRmeId]        = useState<number | null>(null);
   const [pageLoading,  setPageLoading]  = useState(true);
@@ -41,6 +69,7 @@ export default function RMEBuatPage() {
   const [tindakanItems, setTindakanItems] = useState<TindakanItem[]>([]);
   const [resepItems,    setResepItems]    = useState<ResepItem[]>([]);
   const [layananList,  setLayananList]  = useState<Layanan[]>([]);
+  const [paketLayananList, setPaketLayananList] = useState<any[]>([]);
   const [produkList,   setProdukList]   = useState<Produk[]>([]);
 
   // ── Fetch pendaftaran from antrian list ───────────────────────────────────
@@ -66,6 +95,7 @@ export default function RMEBuatPage() {
   useEffect(() => {
     fetchPendaftaran();
     fetch('/api/master/layanan?aktif=true').then(r => r.json()).then(d => setLayananList(d.data ?? [])).catch(() => {});
+    fetch('/api/master/paket-layanan?aktif=true').then(r => r.json()).then(d => setPaketLayananList(d.data ?? [])).catch(() => {});
     fetch('/api/master/produk?aktif=true').then(r  => r.json()).then(d => setProdukList(d.data  ?? [])).catch(() => {});
   }, [fetchPendaftaran]);
 
@@ -73,6 +103,7 @@ export default function RMEBuatPage() {
 
   const handleSaveDraft = async () => {
     setSaving(true);
+    let success = false;
     try {
       const body: Record<string, unknown> = {
         id_pendaftaran: parseInt(idPendaftaran),
@@ -87,19 +118,46 @@ export default function RMEBuatPage() {
         const res    = await fetch('/api/rme', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const result = await res.json();
         if (!res.ok) throw new Error(result.error ?? 'Gagal membuat RME');
-        setRmeId(result.id ?? result.data?.id);
+        const newRmeId = result.id ?? result.data?.id;
+        setRmeId(newRmeId);
       } else {
         const res    = await fetch(`/api/rme/${rmeId}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const result = await res.json();
         if (!res.ok) throw new Error(result.error ?? 'Gagal menyimpan RME');
       }
       toast.success('RME berhasil disimpan sebagai draft');
+      success = true;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Gagal menyimpan RME');
     } finally {
       setSaving(false);
     }
+    return success;
   };
+
+  const handleSaveAndNext = async () => {
+    const success = await handleSaveDraft();
+    if (success) {
+      setStep(s => Math.min(s + 1, 3));
+    }
+  };
+
+  // TindakanCard and ResepCard call onChanged after add/delete.
+  // For the "buat" flow we just refetch from the API to stay in sync.
+  const refetchItems = useCallback(async () => {
+    if (!rmeId) return;
+    const res  = await fetch(`/api/rme/${idPendaftaran}`);
+    const data = await res.json();
+    const d    = data.data ?? data;
+    setTindakanItems((d.tindakan as TindakanItem[]) ?? []);
+    setResepItems((d.resep as { items?: ResepItem[] })?.items ?? []);
+  }, [rmeId]);
+
+  useEffect(() => {
+    if (rmeId) {
+      refetchItems();
+    }
+  }, [rmeId, refetchItems]);
 
   // ── Finalisasi ────────────────────────────────────────────────────────────
 
@@ -115,7 +173,11 @@ export default function RMEBuatPage() {
       if (!res.ok) throw new Error(result.error ?? 'Gagal memfinalisasi RME');
       toast.success('RME berhasil difinalisasi');
       setShowFinalDlg(false);
-      router.push('/dokter/antrian');
+      if (role === 'karyawan') {
+        router.push('/karyawan/antrian');
+      } else {
+        router.push('/dokter/antrian');
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Gagal memfinalisasi RME');
     } finally {
@@ -125,16 +187,6 @@ export default function RMEBuatPage() {
 
   // ── onChanged callbacks — buat page manages local state (no refetch needed) ──
 
-  // TindakanCard and ResepCard call onChanged after add/delete.
-  // For the "buat" flow we just refetch from the API to stay in sync.
-  const refetchItems = useCallback(async () => {
-    if (!rmeId) return;
-    const res  = await fetch(`/api/rme/${rmeId}`);
-    const data = await res.json();
-    const d    = data.data ?? data;
-    setTindakanItems((d.tindakan as TindakanItem[]) ?? []);
-    setResepItems((d.resep as { items?: ResepItem[] })?.items ?? []);
-  }, [rmeId]);
 
   // ── Loading / error ───────────────────────────────────────────────────────
 
@@ -160,38 +212,55 @@ export default function RMEBuatPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}><ArrowLeft className="h-4 w-4" /></Button>
-        <div className="flex-1">
+      <div className="flex items-start gap-3">
+        <Button variant="ghost" size="icon" onClick={() => router.back()} className="mt-0.5"><ArrowLeft className="h-4 w-4" /></Button>
+        <div className="flex-1 space-y-1">
           <h1 className="text-2xl font-bold">Buat Rekam Medis</h1>
           <p className="text-sm text-gray-500">
             {pendaftaran ? `Pasien: ${pendaftaran.nama_pasien} • ${pendaftaran.nama_layanan}` : `Pendaftaran #${idPendaftaran}`}
           </p>
+          <StepBreadcrumb current={step} />
         </div>
         {rmeId && <Badge variant="outline" className={statusBadgeClass('draft')}>Draft</Badge>}
       </div>
 
-      <SoapCard value={soap} onChange={setSoap} editable />
+      {step === 1 && (
+        <>
+          <SoapCard value={soap} onChange={setSoap} editable />
+          <DiagnosaCard
+            utama={diagUtama}     onSelectUtama={setDiagUtama}     onClearUtama={() => setDiagUtama(null)}
+            sekunder={diagSekunder} onSelectSekunder={setDiagSekunder} onClearSekunder={() => setDiagSekunder(null)}
+            editable
+          />
+        </>
+      )}
 
-      <DiagnosaCard
-        utama={diagUtama}     onSelectUtama={setDiagUtama}     onClearUtama={() => setDiagUtama(null)}
-        sekunder={diagSekunder} onSelectSekunder={setDiagSekunder} onClearSekunder={() => setDiagSekunder(null)}
-        editable
-      />
+      {step === 2 && (
+        <TindakanCard rmeId={rmeId} items={tindakanItems} layananList={layananList} paketLayananList={paketLayananList} editable onChanged={refetchItems} />
+      )}
 
-      <TindakanCard rmeId={rmeId} items={tindakanItems} layananList={layananList} editable onChanged={refetchItems} />
-
-      <ResepCard rmeId={rmeId} items={resepItems} produkList={produkList} editable onChanged={refetchItems} />
+      {step === 3 && (
+        <ResepCard rmeId={rmeId} items={resepItems} produkList={produkList} editable onChanged={refetchItems} />
+      )}
 
       {/* Action bar */}
       <div className="flex flex-wrap gap-3 sticky bottom-0 bg-gray-50 py-4 border-t">
-        <Button onClick={handleSaveDraft} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
-          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-          Simpan Draft
-        </Button>
-        <Button variant="outline" onClick={() => setShowFinalDlg(true)} disabled={!rmeId || finalizing}>
-          <FileCheck className="h-4 w-4 mr-2" />Finalisasi
-        </Button>
+        {step > 1 && (
+          <Button variant="outline" onClick={() => setStep(s => s - 1)} disabled={saving || finalizing}>
+            <ArrowLeft className="h-4 w-4 mr-2" />Kembali
+          </Button>
+        )}
+        
+        {step < 3 ? (
+          <Button onClick={handleSaveAndNext} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
+            {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+            Simpan Draft &amp; Lanjut
+          </Button>
+        ) : (
+          <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setShowFinalDlg(true)} disabled={!rmeId || finalizing}>
+            <FileCheck className="h-4 w-4 mr-2" />Finalisasi
+          </Button>
+        )}
       </div>
 
       <FinalisasiDialog

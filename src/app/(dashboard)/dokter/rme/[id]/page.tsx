@@ -322,12 +322,12 @@ export default function DokterRMEDetailPage() {
             <Button 
               onClick={() => setShowFinalDlg(true)}
               disabled={finalizing}
-              className={"bg-emerald-600 hover:bg-emerald-700 ${isMobile ? 'w-full' : ''}"}
+              className={`bg-emerald-600 hover:bg-emerald-700 text-white ${isMobile ? 'w-full' : ''}`}
             >
               <FileCheck className="h-4 w-4 mr-2" />Finalisasi
             </Button>
           ): (
-            <Button onClick={() => setStep(1)} className={"bg-emerald-600 hover:bg-emerald-700 ${isMobile ? 'w-full' : ''}"}>
+            <Button onClick={() => setStep(1)} className={`bg-emerald-600 hover:bg-emerald-700 text-white ${isMobile ? 'w-full' : ''}`}>
               Lanjut
             </Button>
           )}
