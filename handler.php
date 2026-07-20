@@ -83,12 +83,13 @@ function paginate(PDO $pdo, string $sql, array $params, int $page, int $per_page
 function generate_no_rekam_medis(PDO $pdo): string
 {
     try {
-        $stmt = $pdo->query("SELECT COUNT(*) FROM pasien");
-        $count = (int) $stmt->fetchColumn();
+        $stmt = $pdo->query("SELECT MAX(CAST(SUBSTRING(no_rekam_medis, 3) AS UNSIGNED)) FROM pasien WHERE no_rekam_medis LIKE 'RM%'");
+        $max_num = (int) $stmt->fetchColumn();
+        $next_num = $max_num > 0 ? $max_num + 1 : 1;
     } catch (PDOException $e) {
         throw new BridgeException('DB Error: ' . $e->getMessage());
     }
-    return 'RM' . str_pad((string)($count + 1), 6, '0', STR_PAD_LEFT);
+    return 'RM' . str_pad((string)$next_num, 6, '0', STR_PAD_LEFT);
 }
 
 function generate_no_antrian(PDO $pdo, string $tanggal): int
