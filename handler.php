@@ -42,7 +42,10 @@ function safe_query(PDO $pdo, string $sql, array $params = []): void
 {
     try {
         $stmt = $pdo->prepare($sql);
-        $stmt->execute($params);
+        if (!$stmt->execute($params)) {
+            $err = $stmt->errorInfo();
+            throw new BridgeException('DB Error: ' . ($err[2] ?? 'Unknown error') . ' | Query: ' . $sql);
+        }
     } catch (PDOException $e) {
         throw new BridgeException('DB Error: ' . $e->getMessage() . ' | Query: ' . $sql);
     }
@@ -751,7 +754,7 @@ function pasien_riwayat(PDO $pdo, array $data): array
 
 function antrian_hari_ini(PDO $pdo, array $data): array
 {
-    $params    = [date('Y-m-d')];
+    $params    = [date('Y-m-d'), date('Y-m-d')];
     $sql       = "SELECT p.id, p.no_antrian, p.status, p.keluhan_utama, p.jenis_kunjungan,
                          p.tanggal, p.created_at,
                          p.id_paket_layanan as id_paket,
@@ -770,7 +773,8 @@ function antrian_hari_ini(PDO $pdo, array $data): array
                   LEFT JOIN layanan l ON l.id = p.id_layanan
                   LEFT JOIN rekam_medis rm ON rm.id_pendaftaran = p.id
                   LEFT JOIN paket_kunjungan pk ON pk.id_pendaftaran = p.id
-                  WHERE (p.tanggal = ?) OR (pk.sisa_kunjungan > 0 AND p.status = 'selesai')";
+                  WHERE (p.tanggal = ? AND (p.keluhan_utama NOT LIKE 'Kunjungan Paket%')) 
+                     OR (pk.sisa_kunjungan > 0 AND p.status = 'selesai' AND (pk.last_visit_date IS NULL OR pk.last_visit_date != ?))";
     
     if (!empty($data['filter_by_user'])) {
         $sql     .= " AND pen.id = ?";
