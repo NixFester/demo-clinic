@@ -375,8 +375,7 @@ export default function PaketLayananPage() {
                 <div>
                   <Label>Produk dalam Paket</Label>
                   <p className="text-xs text-gray-500 mt-1">
-                    Isi jumlah stok produk <b>per 1x kunjungan</b>. <br/>
-                    Total stok yang akan terpakai = Total kunjungan × Jumlah ini.
+                    *per kunjungan
                   </p>
                 </div>
                 <Button type="button" size="sm" variant="outline" onClick={openAddProduk}>
