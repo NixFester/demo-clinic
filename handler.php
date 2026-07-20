@@ -3003,20 +3003,34 @@ function rme_latestPerPasien(PDO $pdo, array $data): array
 
       $pdo->beginTransaction();
       try {
-          // Kurangi stok produk (sesuai jumlah di paket_produk karena itu adalah per kunjungan)
-          $stmt2 = $pdo->prepare("SELECT id_produk, jumlah FROM paket_produk WHERE id_paket_layanan = ?");
+          // Cek stok produk cukup atau tidak
+          $stmt2 = $pdo->prepare(
+              "SELECT pp.id_produk, pp.jumlah, pr.nama_produk, pr.stok 
+               FROM paket_produk pp
+               JOIN produk pr ON pr.id = pp.id_produk
+               WHERE pp.id_paket_layanan = ?"
+          );
           $stmt2->execute([$paket['id_paket_layanan']]);
-          foreach ($stmt2->fetchAll() as $pp) {
-              safe_query($pdo, "UPDATE produk SET stok = GREATEST(0, stok - ?) WHERE id=?", 
-                  [(int)$pp['jumlah'], (int)$pp['id_produk']]);
+          $produk_list = $stmt2->fetchAll();
+
+          foreach ($produk_list as $prod) {
+              if ((int)$prod['stok'] < (int)$prod['jumlah']) {
+                  throw new BridgeException("Stok produk '{$prod['nama_produk']}' telah habis (Sisa: {$prod['stok']}, Butuh: {$prod['jumlah']}). Kunjungan pasien gagal.");
+              }
+          }
+
+          // Kurangi stok produk karena sudah dipastikan cukup
+          foreach ($produk_list as $prod) {
+              safe_query($pdo, "UPDATE produk SET stok = stok - ? WHERE id=?", 
+                  [(int)$prod['jumlah'], (int)$prod['id_produk']]);
           }
 
           // Catat riwayat kunjungan dengan membuat pendaftaran baru (langsung selesai agar masuk riwayat)
-          $no_antrian = generate_no_antrian($pdo, date('Y-m-d'));
+          // Menggunakan no_antrian = 0 agar tidak menambah nomor antrian aktif
           safe_query($pdo,
               "INSERT INTO pendaftaran (no_antrian, tanggal, id_pasien, id_dokter, id_layanan, id_karyawan, keluhan_utama, jenis_kunjungan, status, id_paket_layanan)
-               VALUES (?, CURDATE(), ?, ?, ?, ?, ?, 'lama', 'selesai', ?)",
-              [$no_antrian, $paket['id_pasien'], $paket['id_dokter'], $paket['id_layanan'], $paket['id_karyawan'], 
+               VALUES (0, CURDATE(), ?, ?, ?, ?, ?, 'lama', 'selesai', ?)",
+              [$paket['id_pasien'], $paket['id_dokter'], $paket['id_layanan'], $paket['id_karyawan'], 
                "Kunjungan Paket (Ke-{$kunjungan_ke})", $paket['id_paket_layanan']]
           );
 
