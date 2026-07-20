@@ -2432,7 +2432,7 @@ function rme_get_or_create(PDO $pdo, array $data): array
 
         // Belum ada — ambil data pendaftaran
         $stmt = $pdo->prepare(
-            "SELECT p.id_pasien, p.id_dokter 
+            "SELECT p.id_pasien, p.id_dokter, p.id_layanan, p.id_paket_layanan
              FROM pendaftaran p 
              WHERE p.id = ? AND p.status = 'dipanggil'"
         );
@@ -2451,6 +2451,56 @@ function rme_get_or_create(PDO $pdo, array $data): array
     );
 
     $newId = (int)$pdo->lastInsertId();
+
+    try {
+        if (!empty($pendaftaran['id_paket_layanan'])) {
+            $stmt = $pdo->prepare("SELECT id_layanan, harga_total FROM paket_layanan WHERE id = ?");
+            $stmt->execute([(int)$pendaftaran['id_paket_layanan']]);
+            $paket = $stmt->fetch();
+            
+            if ($paket) {
+                // Auto-populate Tindakan (Step 2)
+                safe_query($pdo,
+                    "INSERT INTO tindakan_pasien (id_rme, id_layanan, id_paket_layanan, harga_saat_itu, keterangan)
+                     VALUES (?,?,?,?,?)",
+                    [$newId, $paket['id_layanan'], $pendaftaran['id_paket_layanan'], $paket['harga_total'], 'Auto-filled dari paket pendaftaran']
+                );
+
+                // Auto-populate Resep (Step 3)
+                $stmt = $pdo->prepare("SELECT id_produk, jumlah FROM paket_produk WHERE id_paket_layanan = ?");
+                $stmt->execute([(int)$pendaftaran['id_paket_layanan']]);
+                $produkList = $stmt->fetchAll();
+
+                if (!empty($produkList)) {
+                    safe_query($pdo, "INSERT INTO resep (id_rme, id_pasien, status) VALUES (?, ?, 'draft')", 
+                        [$newId, $pendaftaran['id_pasien']]);
+                    $idResep = (int)$pdo->lastInsertId();
+
+                    $stmtInsertDetail = $pdo->prepare(
+                        "INSERT INTO detail_resep (id_resep, id_produk, jumlah, aturan_pakai) VALUES (?, ?, ?, '')"
+                    );
+                    foreach ($produkList as $prod) {
+                        $stmtInsertDetail->execute([$idResep, $prod['id_produk'], $prod['jumlah']]);
+                    }
+                }
+            }
+        } elseif (!empty($pendaftaran['id_layanan'])) {
+            $stmt = $pdo->prepare("SELECT harga FROM layanan WHERE id = ?");
+            $stmt->execute([(int)$pendaftaran['id_layanan']]);
+            $layanan = $stmt->fetch();
+            if ($layanan) {
+                // Auto-populate Tindakan (Step 2)
+                safe_query($pdo,
+                    "INSERT INTO tindakan_pasien (id_rme, id_layanan, harga_saat_itu, keterangan)
+                     VALUES (?,?,?,?)",
+                    [$newId, $pendaftaran['id_layanan'], $layanan['harga'], 'Auto-filled dari pendaftaran']
+                );
+            }
+        }
+    } catch (PDOException $e) {
+        // Abaikan error pada auto-populate agar proses create RME tetap berhasil
+    }
+
     return rme_show($pdo, ['id' => $newId]);
 }
 
