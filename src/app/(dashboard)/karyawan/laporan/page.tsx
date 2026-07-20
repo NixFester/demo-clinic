@@ -91,7 +91,16 @@ export default function KaryawanLaporanPage() {
     }
   };
 
-  useEffect(() => { fetchHarian(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (activeTab === 'harian') fetchHarian();
+    if (activeTab === 'bulanan') fetchBulanan();
+  }, [activeTab]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (activeTab === 'bulanan') fetchBulanan();
+  }, [bulan, tahun]);
 
   const handleExportPDF = async () => {
     if (activeTab === 'harian' && harianData) {

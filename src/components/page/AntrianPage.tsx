@@ -200,12 +200,17 @@ export default function AntrianPage() {
 
   const goToRME = (id: string) => router.push(`/dokter/rme/buat/${parseInt(id)}`);
 
+  const isVisitToday = (it: AntrianItem | null) => {
+    if (!it) return false;
+    const todayStr = new Date().toISOString().split('T')[0];
+    return it.tanggal === todayStr || it.last_visit_date === todayStr;
+  };
+
   // ── Row actions (role-aware) ──────────────────────────────────────────────
 
   function RowActions({ item }: { item: AntrianItem }) {
     const busy = busyId === item.id;
-    const todayStr = new Date().toISOString().split('T')[0];
-    const isTodayVisit = item.tanggal === todayStr || item.last_visit_date === todayStr;
+    const isTodayVisit = isVisitToday(item);
 
     return (
       <div className="flex items-center justify-end gap-2">
@@ -228,18 +233,7 @@ export default function AntrianPage() {
           </Button>
         )}
 
-        {/* PASIEN DATANG — untuk Paket Kunjungan yg masih ada sisa */}
-        {item.status === "selesai" && (item.sisa_kunjungan ?? 0) > 0 && !isTodayVisit && isStaff(role) && (
-          <Button
-            size="sm"
-            className="bg-purple-600 hover:bg-purple-700 text-white"
-            disabled={busy}
-            onClick={() => handlePasienDatang(item.id_pendaftaran ?? item.id)}
-          >
-            {busy && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-            Pasien Datang
-          </Button>
-        )}
+
 
         {/* BUAT RME — dokter OR karyawan on 'dipanggil' */}
         {item.status === "dipanggil" && (isDokter(role) || role === "karyawan") && (
@@ -279,8 +273,8 @@ export default function AntrianPage() {
           </Button>
         )}
 
-        {/* SIAPKAN OBAT — karyawan on 'selesai' with RME */}
-        {item.status === "selesai" && role === "karyawan" && item.id_rme && (
+        {/* SIAPKAN OBAT — karyawan on 'selesai' with RME or active package visit */}
+        {item.status === "selesai" && role === "karyawan" && (item.id_rme || ((item.sisa_kunjungan ?? 0) > 0 && !isTodayVisit)) && (
           <Button
             size="sm"
             variant="outline"
@@ -526,10 +520,23 @@ export default function AntrianPage() {
                 </div>
               )}
 
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2 mt-4 border-t pt-4">
                 <Button variant="outline" onClick={closeObatDialog}>
                   Tutup
                 </Button>
+                {selectedItem.status === "selesai" && (selectedItem.sisa_kunjungan ?? 0) > 0 && !isVisitToday(selectedItem) && isStaff(role) && (
+                  <Button
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
+                    disabled={busyId === selectedItem.id}
+                    onClick={() => {
+                      handlePasienDatang(selectedItem.id_pendaftaran ?? selectedItem.id);
+                      closeObatDialog();
+                    }}
+                  >
+                    {busyId === selectedItem.id && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                    Obat Diterima
+                  </Button>
+                )}
               </div>
             </div>
           )}
