@@ -25,7 +25,7 @@ export default function PasienDetailPage() {
         const res = await fetch(`/api/pasien/${id}`);
         const data = await res.json();
         setPasien(data);
-        setRiwayat(data.riwayat_kunjungan || data.kunjungan || []);
+        setRiwayat(data.riwayat?.data || data.riwayat_kunjungan || data.kunjungan || []);
       } catch (err) {
         console.error('[PasienDetailPage] Error:', err);
         setError('Gagal memuat data pasien');
