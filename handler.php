@@ -1126,25 +1126,56 @@ function rme_store(PDO $pdo, array $data): array
         $stmt = $pdo->prepare("SELECT id FROM rekam_medis WHERE id_pendaftaran = ?");
         $stmt->execute([(int)$data['id_pendaftaran']]);
         if ($stmt->fetch()) throw new BridgeException('RME untuk pendaftaran ini sudah ada');
+
+        // Ambil info layanan/paket dari pendaftaran
+        $stmtPend = $pdo->prepare("SELECT id_layanan, id_paket_layanan FROM pendaftaran WHERE id = ?");
+        $stmtPend->execute([(int)$data['id_pendaftaran']]);
+        $pend = $stmtPend->fetch();
     } catch (PDOException $e) {
         throw new BridgeException('DB Error: ' . $e->getMessage());
     }
 
-    safe_query($pdo,
-        "INSERT INTO rekam_medis
-            (id_pendaftaran, id_pasien, id_dokter, subjektif, objektif,
-             assesment, plan, kondisi_masuk, kondisi_keluar,
-             instruksi_tindak_lanjut, id_diagnosa_utama, id_diagnosa_sekunder, status)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'draft')",
-        [
-            $data['id_pendaftaran'], $data['id_pasien'], $data['id_dokter'],
-            $data['subjektif'] ?? '', $data['objektif'] ?? '', $data['assesment'] ?? '',
-            $data['plan'] ?? '', $data['kondisi_masuk'] ?? '', $data['kondisi_keluar'] ?? '',
-            $data['instruksi_tindak_lanjut'] ?? '', $data['id_diagnosa_utama'] ?? null,
-            $data['id_diagnosa_sekunder'] ?? null,
-        ]
-    );
-    return ['id' => (int)$pdo->lastInsertId()];
+    $pdo->beginTransaction();
+    try {
+        safe_query($pdo,
+            "INSERT INTO rekam_medis
+                (id_pendaftaran, id_pasien, id_dokter, subjektif, objektif,
+                 assesment, plan, kondisi_masuk, kondisi_keluar,
+                 instruksi_tindak_lanjut, id_diagnosa_utama, id_diagnosa_sekunder, status)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,'draft')",
+            [
+                $data['id_pendaftaran'], $data['id_pasien'], $data['id_dokter'],
+                $data['subjektif'] ?? '', $data['objektif'] ?? '', $data['assesment'] ?? '',
+                $data['plan'] ?? '', $data['kondisi_masuk'] ?? '', $data['kondisi_keluar'] ?? '',
+                $data['instruksi_tindak_lanjut'] ?? '', $data['id_diagnosa_utama'] ?? null,
+                $data['id_diagnosa_sekunder'] ?? null,
+            ]
+        );
+        $id_rme = (int)$pdo->lastInsertId();
+
+        // Auto-populate tindakan dari pendaftaran
+        if ($pend) {
+            if (!empty($pend['id_paket_layanan'])) {
+                tindakan_store($pdo, [
+                    'id_rme' => $id_rme,
+                    'id_paket_layanan' => $pend['id_paket_layanan'],
+                    'keterangan' => 'Auto-filled dari paket pendaftaran'
+                ]);
+            } elseif (!empty($pend['id_layanan'])) {
+                tindakan_store($pdo, [
+                    'id_rme' => $id_rme,
+                    'id_layanan' => $pend['id_layanan'],
+                    'keterangan' => 'Auto-filled dari layanan pendaftaran'
+                ]);
+            }
+        }
+
+        $pdo->commit();
+        return ['id' => $id_rme];
+    } catch (Throwable $e) {
+        $pdo->rollBack();
+        throw new BridgeException('DB Error (RME Store): ' . $e->getMessage());
+    }
 }
 
 function rme_update(PDO $pdo, array $data): array
