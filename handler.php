@@ -1010,7 +1010,7 @@ function rme_show(PDO $pdo, array $data): array
     try {
         // Tindakan
         $stmt = $pdo->prepare(
-            "SELECT tp.id, tp.harga_saat_itu, tp.keterangan, COALESCE(l.nama_layanan, pl.nama_paket) as nama_layanan
+            "SELECT tp.id, tp.harga_saat_itu, tp.keterangan, COALESCE(pl.nama_paket, l.nama_layanan) as nama_layanan
              FROM tindakan_pasien tp
              LEFT JOIN layanan l ON l.id = tp.id_layanan
              LEFT JOIN paket_layanan pl ON pl.id = tp.id_paket_layanan
@@ -1476,7 +1476,7 @@ function invoice_generate(PDO $pdo, array $data): array
         // Item 2+: Tindakan dari RME
         if ($pend['id_rme']) {
             $stmt = $pdo->prepare(
-                "SELECT tp.id, tp.harga_saat_itu, COALESCE(l.nama_layanan, pl.nama_paket) as nama_layanan, tp.keterangan
+                "SELECT tp.id, tp.harga_saat_itu, COALESCE(pl.nama_paket, l.nama_layanan) as nama_layanan, tp.keterangan
                  FROM tindakan_pasien tp
                  LEFT JOIN layanan l ON l.id = tp.id_layanan
                  LEFT JOIN paket_layanan pl ON pl.id = tp.id_paket_layanan
