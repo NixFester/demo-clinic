@@ -250,14 +250,25 @@ export default function LaporanPage() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (activeTab === 'harian' && !harianData) fetchHarian();
-    if (activeTab === 'bulanan' && !bulananData) fetchBulanan();
-    if (activeTab === 'layanan' && !layananData) fetchLayanan();
-    if (activeTab === 'produk' && !produkData) fetchProduk();
-    if (activeTab === 'dokter' && !dokterData) fetchDokter();
-    if (activeTab === 'rme' && !rmeData) fetchRme();
-    if (activeTab === 'range' && !rangeData) fetchRange();
+    if (activeTab === 'harian') fetchHarian();
+    if (activeTab === 'bulanan') fetchBulanan();
+    if (activeTab === 'layanan') fetchLayanan();
+    if (activeTab === 'produk') fetchProduk();
+    if (activeTab === 'dokter') fetchDokter();
+    if (activeTab === 'rme') fetchRme();
+    if (activeTab === 'range') fetchRange();
   }, [activeTab]);
+
+  // Auto fetch when inputs change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (activeTab === 'bulanan') fetchBulanan();
+  }, [bulan, tahun]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (activeTab === 'range') fetchRange();
+  }, [tanggalMulai, tanggalSelesai]);
 
    const handleExportPDF = async (tab: string) => {
     try {
