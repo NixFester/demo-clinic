@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
 import { Save, FileCheck } from 'lucide-react';
+import { Diagnosa } from '@/types/api-items';
 import { DiagnosaSearch } from './DiagnosaSearch';
 
 interface SoapFormProps {
@@ -42,6 +43,22 @@ export function SoapForm({ initialData, onSubmit, onFinalize, loading, readOnly 
     id_diagnosa_utama: initialData?.id_diagnosa_utama || null as number | null,
     id_diagnosa_sekunder: initialData?.id_diagnosa_sekunder || null as number | null,
   });
+
+  const [diagnosaUtama, setDiagnosaUtama] = useState<Diagnosa | null>(
+    initialData?.id_diagnosa_utama ? {
+      id: initialData.id_diagnosa_utama,
+      kode_icd10: initialData.kode_diagnosa_utama || '',
+      nama_diagnosa: initialData.nama_diagnosa_utama || '',
+    } as Diagnosa : null
+  );
+
+  const [diagnosaSekunder, setDiagnosaSekunder] = useState<Diagnosa | null>(
+    initialData?.id_diagnosa_sekunder ? {
+      id: initialData.id_diagnosa_sekunder,
+      kode_icd10: initialData.kode_diagnosa_sekunder || '',
+      nama_diagnosa: initialData.nama_diagnosa_sekunder || '',
+    } as Diagnosa : null
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,25 +120,35 @@ export function SoapForm({ initialData, onSubmit, onFinalize, loading, readOnly 
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Diagnosa Utama</Label>
-            {initialData?.kode_diagnosa_utama && readOnly ? (
-              <p className="text-sm p-2 bg-blue-50 rounded">{initialData.kode_diagnosa_utama} - {initialData.nama_diagnosa_utama}</p>
-            ) : (
-              <DiagnosaSearch
-                onSelect={(d) => d?.id && setForm({ ...form, id_diagnosa_utama: d.id })}
-                placeholder="Cari diagnosa utama..."
-              />
-            )}
+            <DiagnosaSearch
+              value={diagnosaUtama}
+              editable={!readOnly}
+              onClear={() => {
+                setDiagnosaUtama(null);
+                setForm({ ...form, id_diagnosa_utama: null });
+              }}
+              onSelect={(d) => {
+                setDiagnosaUtama(d);
+                setForm({ ...form, id_diagnosa_utama: d.id });
+              }}
+              placeholder="Cari diagnosa utama..."
+            />
           </div>
           <div className="space-y-2">
             <Label>Diagnosa Sekunder</Label>
-            {initialData?.kode_diagnosa_sekunder && readOnly ? (
-              <p className="text-sm p-2 bg-blue-50 rounded">{initialData.kode_diagnosa_sekunder} - {initialData.nama_diagnosa_sekunder}</p>
-            ) : (
-              <DiagnosaSearch
-                onSelect={(d) => d?.id && setForm({ ...form, id_diagnosa_sekunder: d.id })}
-                placeholder="Cari diagnosa sekunder (opsional)..."
-              />
-            )}
+            <DiagnosaSearch
+              value={diagnosaSekunder}
+              editable={!readOnly}
+              onClear={() => {
+                setDiagnosaSekunder(null);
+                setForm({ ...form, id_diagnosa_sekunder: null });
+              }}
+              onSelect={(d) => {
+                setDiagnosaSekunder(d);
+                setForm({ ...form, id_diagnosa_sekunder: d.id });
+              }}
+              placeholder="Cari diagnosa sekunder (opsional)..."
+            />
           </div>
         </CardContent>
       </Card>

@@ -292,7 +292,7 @@ export default function LaporanPage() {
         return;
       }
 
-      const asPdf = pdf(doc);
+      const asPdf = pdf(doc as any);
       const blob = await asPdf.toBlob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');

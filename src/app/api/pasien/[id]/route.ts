@@ -12,7 +12,7 @@ export async function GET(
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
-    const result = await callBridge("pasien.show", { id: parseInt(id) });
+    const result = await callBridge<Record<string, any>>("pasien.show", { id: parseInt(id) });
 
     // Also get riwayat
     const riwayat = await callBridge("pasien.riwayat", { id_pasien: parseInt(id) });

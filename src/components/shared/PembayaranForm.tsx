@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Payment } from 'lucide-react';
+import { CreditCard } from 'lucide-react';
 import { formatCurrency } from '@/lib/helpers';
 
 interface PembayaranFormProps {
@@ -88,7 +88,7 @@ export function PembayaranForm({ invoiceId, total, onSuccess }: PembayaranFormPr
           )}
 
           <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={loading || parseFloat(jumlahBayar) < total}>
-            <Payment className="h-4 w-4 mr-2" />
+            <CreditCard className="h-4 w-4 mr-2" />
             {loading ? 'Memproses...' : 'Bayar'}
           </Button>
         </form>

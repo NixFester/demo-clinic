@@ -375,10 +375,6 @@ export interface AntrianItem {
   nama_dokter:     string;
   // layanan
   nama_layanan:    string | null;
-  // paket
-  id_paket?:       number | null;
-  sisa_kunjungan?: number;
-  total_kunjungan?: number;
   // RME (null if not yet created)
   id_rme:          number | null;
   status_rme:      StatusRME | null;

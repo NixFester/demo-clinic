@@ -18,6 +18,8 @@ export default function PengaturanPage() {
     no_telepon_klinik: '',
     batas_diskon_karyawan: 20,
     footer_invoice: '',
+    created_at: '',
+    updated_at: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -36,6 +38,8 @@ export default function PengaturanPage() {
             no_telepon_klinik: data.no_telepon_klinik || '',
             batas_diskon_karyawan: data.batas_diskon_karyawan || 20,
             footer_invoice: data.footer_invoice || '',
+            created_at: data.created_at || '',
+            updated_at: data.updated_at || '',
           });
         }
       } catch (err) {

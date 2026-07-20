@@ -63,7 +63,7 @@ export function buildReceiptElement(invoice: InvoiceDetail) {
       <Line />
       {serviceItems.map((item) => (
         <>
-          <Text key={`name-${item.id}`} wrap={true}>{item.nama_item}</Text>
+          <Text key={`name-${item.id}`}>{item.nama_item}</Text>
           <Row
             key={`price-${item.id}`}
             left={`  ${item.qty} x ${formatRupiah(item.harga_satuan || 0)}`}
