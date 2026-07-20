@@ -865,19 +865,40 @@ function pendaftaran_store(PDO $pdo, array $data): array
     $id_paket = !empty($data['id_paket_layanan']) ? (int)$data['id_paket_layanan'] : null;
     $status = 'menunggu';
 
-    safe_query($pdo,
-        "INSERT INTO pendaftaran
-            (no_antrian, id_pasien, id_dokter, id_layanan, id_paket_layanan, id_karyawan,
-             tanggal, keluhan_utama, jenis_kunjungan, status, catatan)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-        [
-            $no_antrian, $data['id_pasien'], $data['id_dokter'],
-            $data['id_layanan'], $id_paket, $data['id_karyawan'],
-            $tanggal, $data['keluhan_utama'], $data['jenis_kunjungan'],
-            $status, $data['catatan'] ?? '',
-        ]
-    );
-    return ['id' => (int)$pdo->lastInsertId(), 'no_antrian' => $no_antrian];
+    $pdo->beginTransaction();
+    try {
+        safe_query($pdo,
+            "INSERT INTO pendaftaran
+                (no_antrian, id_pasien, id_dokter, id_layanan, id_paket_layanan, id_karyawan,
+                 tanggal, keluhan_utama, jenis_kunjungan, status, catatan)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            [
+                $no_antrian, $data['id_pasien'], $data['id_dokter'],
+                $data['id_layanan'], $id_paket, $data['id_karyawan'],
+                $tanggal, $data['keluhan_utama'], $data['jenis_kunjungan'],
+                $status, $data['catatan'] ?? '',
+            ]
+        );
+        $id_pendaftaran = (int)$pdo->lastInsertId();
+
+        if ($id_paket) {
+            $stmt = $pdo->prepare("SELECT total_kunjungan FROM paket_layanan WHERE id = ?");
+            $stmt->execute([$id_paket]);
+            $tk = (int)$stmt->fetchColumn();
+
+            safe_query($pdo,
+                "INSERT INTO paket_kunjungan (id_pendaftaran, id_paket_layanan, total_kunjungan, sisa_kunjungan, status)
+                 VALUES (?, ?, ?, ?, 'aktif')",
+                [$id_pendaftaran, $id_paket, $tk, $tk]
+            );
+        }
+
+        $pdo->commit();
+        return ['id' => $id_pendaftaran, 'no_antrian' => $no_antrian];
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        throw new BridgeException('DB Error: ' . $e->getMessage());
+    }
 }
 
 function pendaftaran_updateStatus(PDO $pdo, array $data): array
@@ -2785,12 +2806,12 @@ function rme_latestPerPasien(PDO $pdo, array $data): array
       $id_pendaftaran = (int)$data['id_pendaftaran'];
 
       try {
-          // Get paket info for this pendaftaran
           $stmt = $pdo->prepare(
-              "SELECT pl.id, pl.sisa_kunjungan, pl.total_kunjungan, pl.id_layanan,
+              "SELECT pk.id, pk.sisa_kunjungan, pk.total_kunjungan, pl.id_layanan,
                       rm.id as id_rme
-               FROM paket_layanan pl
-               JOIN pendaftaran p ON p.id_paket_layanan = pl.id
+               FROM paket_kunjungan pk
+               JOIN paket_layanan pl ON pl.id = pk.id_paket_layanan
+               JOIN pendaftaran p ON p.id = pk.id_pendaftaran
                LEFT JOIN rekam_medis rm ON rm.id_pendaftaran = p.id
                WHERE p.id = ? AND p.status = 'menunggu'
                LIMIT 1"
@@ -2805,45 +2826,42 @@ function rme_latestPerPasien(PDO $pdo, array $data): array
 
       $new_sisa = (int)$paket['sisa_kunjungan'] - 1;
 
-      if ($new_sisa <= 0) {
-          // Last visit - remove from queue
-          $pdo->beginTransaction();
-          try {
-              // Update sisa_kunjungan to 0
+      $pdo->beginTransaction();
+      try {
+          if ($new_sisa <= 0) {
               safe_query($pdo,
-                  "UPDATE paket_layanan SET sisa_kunjungan=0 WHERE id=?",
+                  "UPDATE paket_kunjungan SET sisa_kunjungan=0, status='selesai' WHERE id=?",
                   [(int)$paket['id']]
               );
-
-              // Remove from antrian (update status to 'selesai')
               safe_query($pdo,
                   "UPDATE pendaftaran SET status='selesai' WHERE id=?",
                   [$id_pendaftaran]
               );
-
               $pdo->commit();
-          } catch (Throwable $e) {
-              $pdo->rollBack();
-              throw new BridgeException('DB Error (Final Visit): ' . $e->getMessage());
+              return [
+                  'success' => true,
+                  'last_visit' => true,
+                  'message' => 'Kunjungan terakhir. Pasien selesai.',
+              ];
+          } else {
+              safe_query($pdo,
+                  "UPDATE paket_kunjungan SET sisa_kunjungan=? WHERE id=?",
+                  [$new_sisa, (int)$paket['id']]
+              );
+              safe_query($pdo,
+                  "UPDATE pendaftaran SET status='selesai' WHERE id=?",
+                  [$id_pendaftaran]
+              );
+              $pdo->commit();
+              return [
+                  'success' => true,
+                  'last_visit' => false,
+                  'sisa_kunjungan' => $new_sisa,
+                  'message' => "Kunjungan berhasil dicatat. Sisa {$new_sisa} kunjungan.",
+              ];
           }
-
-          return [
-              'success' => true,
-              'last_visit' => true,
-              'message' => 'Kunjungan terakhir. Pasien selesai.',
-          ];
-      } else {
-          // Update sisa_kunjungan
-          safe_query($pdo,
-              "UPDATE paket_layanan SET sisa_kunjungan=? WHERE id=?",
-              [$new_sisa, (int)$paket['id']]
-          );
-
-          return [
-              'success' => true,
-              'last_visit' => false,
-              'sisa_kunjungan' => $new_sisa,
-              'message' => "Kunjungan berhasil dicatat. Sisa {$new_sisa} kunjungan.",
-          ];
+      } catch (Throwable $e) {
+          $pdo->rollBack();
+          throw new BridgeException('DB Error (Kunjungan Paket): ' . $e->getMessage());
       }
   }
