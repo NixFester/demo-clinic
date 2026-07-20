@@ -1214,15 +1214,15 @@ function tindakan_store(PDO $pdo, array $data): array
     }
 
     if (!empty($data['id_paket_layanan'])) {
-        $stmt = $pdo->prepare("SELECT harga_total FROM paket_layanan WHERE id = ?");
+        $stmt = $pdo->prepare("SELECT id_layanan, harga_total FROM paket_layanan WHERE id = ?");
         $stmt->execute([(int)$data['id_paket_layanan']]);
         $paket = $stmt->fetch();
         if (!$paket) throw new BridgeException('Paket layanan tidak ditemukan', 404);
 
         safe_query($pdo,
-            "INSERT INTO tindakan_pasien (id_rme, id_paket_layanan, harga_saat_itu, keterangan)
-             VALUES (?,?,?,?)",
-            [$data['id_rme'], $data['id_paket_layanan'], $paket['harga_total'], $data['keterangan'] ?? '']
+            "INSERT INTO tindakan_pasien (id_rme, id_layanan, id_paket_layanan, harga_saat_itu, keterangan)
+             VALUES (?,?,?,?,?)",
+            [$data['id_rme'], $paket['id_layanan'], $data['id_paket_layanan'], $paket['harga_total'], $data['keterangan'] ?? '']
         );
         return ['id' => (int)$pdo->lastInsertId()];
     } else {
