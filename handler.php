@@ -95,7 +95,7 @@ function generate_no_rekam_medis(PDO $pdo): string
 function generate_no_antrian(PDO $pdo, string $tanggal): int
 {
     try {
-        $stmt = $pdo->prepare("SELECT COUNT(*) FROM pendaftaran WHERE tanggal = ? AND status != 'batal'");
+        $stmt = $pdo->prepare("SELECT MAX(no_antrian) FROM pendaftaran WHERE tanggal = ?");
         $stmt->execute([$tanggal]);
         return (int) $stmt->fetchColumn() + 1;
     } catch (PDOException $e) {
@@ -1244,13 +1244,6 @@ function tindakan_store(PDO $pdo, array $data): array
 {
     require_fields($data, ['id_rme']);
 
-    // Auto migrate table if needed
-    try {
-        $pdo->exec("ALTER TABLE tindakan_pasien ADD COLUMN id_paket_layanan INT DEFAULT NULL");
-    } catch (PDOException $e) {
-        // column already exists, ignore
-    }
-
     if (!empty($data['id_paket_layanan'])) {
         $stmt = $pdo->prepare("SELECT id_layanan, harga_total FROM paket_layanan WHERE id = ?");
         $stmt->execute([(int)$data['id_paket_layanan']]);
@@ -1263,11 +1256,6 @@ function tindakan_store(PDO $pdo, array $data): array
             [$data['id_rme'], $paket['id_layanan'], $data['id_paket_layanan'], $paket['harga_total'], $data['keterangan'] ?? '']
         );
         $id_tindakan = (int)$pdo->lastInsertId();
-
-        // [NEW] Otomatis menambah dari list produk paket_layanan ke resep obat
-        try {
-            $pdo->exec("ALTER TABLE detail_resep ADD COLUMN id_paket_layanan INT DEFAULT NULL");
-        } catch (PDOException $e) { }
 
         $stmtResep = $pdo->prepare("SELECT id FROM resep WHERE id_rme = ? LIMIT 1");
         $stmtResep->execute([(int)$data['id_rme']]);
