@@ -66,6 +66,7 @@ export default function DokterRMEDetailPage() {
   const [diagUtama,     setDiagUtama]     = useState<Diagnosa | null>(null);
   const [diagSekunder,  setDiagSekunder]  = useState<Diagnosa | null>(null);
   const [layananList,   setLayananList]   = useState<Layanan[]>([]);
+  const [paketLayananList, setPaketLayananList] = useState<any[]>([]);
   const [produkList,    setProdukList]    = useState<Produk[]>([]);
 
   const formatNoRM = (id: number | string) => `RM${String(id).padStart(6, '0')}`;
@@ -102,6 +103,7 @@ export default function DokterRMEDetailPage() {
   useEffect(() => {
     fetchRme();
     fetch('/api/master/layanan?aktif=true').then(r => r.json()).then(d => setLayananList(d.data ?? [])).catch(() => {});
+    fetch('/api/master/paket-layanan?aktif=true').then(r => r.json()).then(d => setPaketLayananList(d.data ?? [])).catch(() => {});
     fetch('/api/master/produk?aktif=true').then(r  => r.json()).then(d => setProdukList(d.data  ?? [])).catch(() => {});
   }, [fetchRme]);
 
@@ -266,7 +268,7 @@ export default function DokterRMEDetailPage() {
       {step === 2 && (
         <TindakanCard
           rmeId={rme.id} items={tindakanItems}
-          layananList={layananList} editable={isDraft} onChanged={fetchRme}
+          layananList={layananList} paketLayananList={paketLayananList} editable={isDraft} onChanged={fetchRme}
         />
       )}
 

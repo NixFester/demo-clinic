@@ -1010,9 +1010,10 @@ function rme_show(PDO $pdo, array $data): array
     try {
         // Tindakan
         $stmt = $pdo->prepare(
-            "SELECT tp.id, tp.harga_saat_itu, tp.keterangan, l.nama_layanan
+            "SELECT tp.id, tp.harga_saat_itu, tp.keterangan, COALESCE(l.nama_layanan, pl.nama_paket) as nama_layanan
              FROM tindakan_pasien tp
-             JOIN layanan l ON l.id = tp.id_layanan
+             LEFT JOIN layanan l ON l.id = tp.id_layanan
+             LEFT JOIN paket_layanan pl ON pl.id = tp.id_paket_layanan
              WHERE tp.id_rme = ?"
         );
         $stmt->execute([(int)$data['id']]);
@@ -1203,23 +1204,41 @@ function rme_finalisasi(PDO $pdo, array $data): array
 
 function tindakan_store(PDO $pdo, array $data): array
 {
-    require_fields($data, ['id_rme', 'id_layanan']);
+    require_fields($data, ['id_rme']);
+
+    // Auto migrate table if needed
     try {
+        $pdo->exec("ALTER TABLE tindakan_pasien ADD COLUMN id_paket_layanan INT DEFAULT NULL");
+    } catch (PDOException $e) {
+        // column already exists, ignore
+    }
+
+    if (!empty($data['id_paket_layanan'])) {
+        $stmt = $pdo->prepare("SELECT harga_total FROM paket_layanan WHERE id = ?");
+        $stmt->execute([(int)$data['id_paket_layanan']]);
+        $paket = $stmt->fetch();
+        if (!$paket) throw new BridgeException('Paket layanan tidak ditemukan', 404);
+
+        safe_query($pdo,
+            "INSERT INTO tindakan_pasien (id_rme, id_paket_layanan, harga_saat_itu, keterangan)
+             VALUES (?,?,?,?)",
+            [$data['id_rme'], $data['id_paket_layanan'], $paket['harga_total'], $data['keterangan'] ?? '']
+        );
+        return ['id' => (int)$pdo->lastInsertId()];
+    } else {
+        require_fields($data, ['id_layanan']);
         $stmt = $pdo->prepare("SELECT harga FROM layanan WHERE id = ?");
         $stmt->execute([(int)$data['id_layanan']]);
         $layanan = $stmt->fetch();
-    } catch (PDOException $e) {
-        throw new BridgeException('DB Error: ' . $e->getMessage());
+        if (!$layanan) throw new BridgeException('Layanan tidak ditemukan', 404);
+
+        safe_query($pdo,
+            "INSERT INTO tindakan_pasien (id_rme, id_layanan, harga_saat_itu, keterangan)
+             VALUES (?,?,?,?)",
+            [$data['id_rme'], $data['id_layanan'], $layanan['harga'], $data['keterangan'] ?? '']
+        );
+        return ['id' => (int)$pdo->lastInsertId()];
     }
-
-    if (!$layanan) throw new BridgeException('Layanan tidak ditemukan', 404);
-
-    safe_query($pdo,
-        "INSERT INTO tindakan_pasien (id_rme, id_layanan, harga_saat_itu, keterangan)
-         VALUES (?,?,?,?)",
-        [$data['id_rme'], $data['id_layanan'], $layanan['harga'], $data['keterangan'] ?? '']
-    );
-    return ['id' => (int)$pdo->lastInsertId()];
 }
 
 function tindakan_delete(PDO $pdo, array $data): array
@@ -1457,9 +1476,10 @@ function invoice_generate(PDO $pdo, array $data): array
         // Item 2+: Tindakan dari RME
         if ($pend['id_rme']) {
             $stmt = $pdo->prepare(
-                "SELECT tp.id, tp.harga_saat_itu, l.nama_layanan, tp.keterangan
+                "SELECT tp.id, tp.harga_saat_itu, COALESCE(l.nama_layanan, pl.nama_paket) as nama_layanan, tp.keterangan
                  FROM tindakan_pasien tp
-                 JOIN layanan l ON l.id = tp.id_layanan
+                 LEFT JOIN layanan l ON l.id = tp.id_layanan
+                 LEFT JOIN paket_layanan pl ON pl.id = tp.id_paket_layanan
                  WHERE tp.id_rme = ?"
             );
             $stmt->execute([$pend['id_rme']]);

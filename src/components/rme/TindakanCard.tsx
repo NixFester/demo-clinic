@@ -11,20 +11,23 @@ import { toast } from 'sonner';
 import { fmtCurrency} from './rme-helpers';
 import { TindakanItem, Layanan } from '@/types/api-items';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Switch } from '@/components/ui/switch';
 
 
 interface TindakanCardProps {
   rmeId:        number | null;
   items:        TindakanItem[];
   layananList:  Layanan[];
+  paketLayananList?: any[];
   editable?:    boolean;
   /** Called after successful add/delete so parent can refetch or update local state */
   onChanged:    () => void;
 }
 
-export function TindakanCard({ rmeId, items, layananList, editable = true, onChanged }: TindakanCardProps) {
+export function TindakanCard({ rmeId, items, layananList, paketLayananList = [], editable = true, onChanged }: TindakanCardProps) {
   const isMobile = useIsMobile();
   const [selectedLayanan, setSelectedLayanan] = useState('');
+  const [usePaket,        setUsePaket]        = useState(false);
   const [keterangan,      setKeterangan]      = useState('');
   const [adding,          setAdding]          = useState(false);
   const [deletingId,      setDeletingId]      = useState<number | null>(null);
@@ -34,10 +37,17 @@ export function TindakanCard({ rmeId, items, layananList, editable = true, onCha
     if (!selectedLayanan) return;
     setAdding(true);
     try {
+      const payload: any = { keterangan };
+      if (usePaket) {
+        payload.id_paket_layanan = parseInt(selectedLayanan);
+      } else {
+        payload.id_layanan = parseInt(selectedLayanan);
+      }
+
       const res = await fetch(`/api/rme/${rmeId}/tindakan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_layanan: parseInt(selectedLayanan), keterangan }),
+        body: JSON.stringify(payload),
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error ?? 'Gagal menambah tindakan');
@@ -119,16 +129,24 @@ export function TindakanCard({ rmeId, items, layananList, editable = true, onCha
         {/* Add form */}
         {editable && (
           <>
+            <div className="flex items-center space-x-2 mb-2">
+              <Switch id="use-paket-tindakan" checked={usePaket} onCheckedChange={(val) => { setUsePaket(val); setSelectedLayanan(''); }} />
+              <Label htmlFor="use-paket-tindakan">Gunakan Paket Layanan</Label>
+            </div>
             <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'} gap-3`}>
               <div className="space-y-1 w-full">
-                <Label className="text-xs">Layanan</Label>
+                <Label className="text-xs">{usePaket ? 'Paket Layanan' : 'Layanan'}</Label>
                 <select
                   value={selectedLayanan}
                   onChange={(e) => setSelectedLayanan(e.target.value)}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  <option value="">Pilih layanan...</option>
-                  {layananList.map((l) => (
+                  <option value="">Pilih {usePaket ? 'paket...' : 'layanan...'}</option>
+                  {usePaket ? paketLayananList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nama_paket} — {fmtCurrency(p.harga_total)} ({p.total_kunjungan}x)
+                    </option>
+                  )) : layananList.map((l) => (
                     <option key={l.id} value={l.id}>
                       {l.nama_layanan} — {fmtCurrency(l.harga)}
                     </option>
