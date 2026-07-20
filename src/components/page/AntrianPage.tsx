@@ -226,18 +226,6 @@ export default function AntrianPage() {
           </Button>
         )}
 
-        {/* PASIEN DATANG — untuk Paket Kunjungan yg masih ada sisa */}
-        {item.status === "selesai" && (item.sisa_kunjungan ?? 0) > 0 && isStaff(role) && (
-          <Button
-            size="sm"
-            className="bg-purple-600 hover:bg-purple-700 text-white"
-            disabled={busy}
-            onClick={() => handlePasienDatang(item.id_pendaftaran ?? item.id)}
-          >
-            {busy && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-            Pasien Datang
-          </Button>
-        )}
 
         {/* BUAT RME — dokter OR karyawan on 'dipanggil' */}
         {item.status === "dipanggil" && (isDokter(role) || role === "karyawan") && (
