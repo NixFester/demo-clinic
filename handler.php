@@ -3007,11 +3007,11 @@ function rme_latestPerPasien(PDO $pdo, array $data): array
                   [(int)$pp['jumlah'], (int)$pp['id_produk']]);
           }
 
-          // Catat riwayat kunjungan dengan membuat pendaftaran baru 
+          // Catat riwayat kunjungan dengan membuat pendaftaran baru (langsung selesai agar masuk riwayat)
           $no_antrian = generate_no_antrian($pdo, date('Y-m-d'));
           safe_query($pdo,
               "INSERT INTO pendaftaran (no_antrian, tanggal, id_pasien, id_dokter, id_layanan, id_karyawan, keluhan_utama, jenis_kunjungan, status, id_paket_layanan)
-               VALUES (?, CURDATE(), ?, ?, ?, ?, ?, 'lama', 'antri', ?)",
+               VALUES (?, CURDATE(), ?, ?, ?, ?, ?, 'lama', 'selesai', ?)",
               [$no_antrian, $paket['id_pasien'], $paket['id_dokter'], $paket['id_layanan'], $paket['id_karyawan'], 
                "Kunjungan Paket (Ke-{$kunjungan_ke})", $paket['id_paket_layanan']]
           );
