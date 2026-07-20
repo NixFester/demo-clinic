@@ -761,14 +761,16 @@ function antrian_hari_ini(PDO $pdo, array $data): array
                          pen.nama_lengkap as nama_dokter,
                          l.nama_layanan,
                          rm.id as id_rme, rm.status as status_rme,
-                         pas.no_whatsapp as no_whatsapp                         
+                         pas.no_whatsapp as no_whatsapp,
+                         pk.sisa_kunjungan, pk.total_kunjungan
                   FROM pendaftaran p
                   JOIN pasien pas ON pas.id = p.id_pasien
                   JOIN dokter d ON d.id = p.id_dokter
                   JOIN pengguna pen ON pen.id = d.id_pengguna
                   LEFT JOIN layanan l ON l.id = p.id_layanan
                   LEFT JOIN rekam_medis rm ON rm.id_pendaftaran = p.id
-                  WHERE p.tanggal = ?";
+                  LEFT JOIN paket_kunjungan pk ON pk.id_pendaftaran = p.id
+                  WHERE (p.tanggal = ?) OR (pk.sisa_kunjungan > 0 AND p.status = 'selesai')";
     
     if (!empty($data['filter_by_user'])) {
         $sql     .= " AND pen.id = ?";
@@ -1682,8 +1684,50 @@ function pembayaran_store(PDO $pdo, array $data): array
                 }
 
                 if ($dr) {
-                    safe_query($pdo, "UPDATE produk SET stok = stok - ? WHERE id=? AND stok >= ?", [(int)$pi['qty'], (int)$dr['id_produk'], (int)$pi['qty']]);
+                    safe_query($pdo, "UPDATE produk SET stok = GREATEST(0, stok - ?) WHERE id=?", [(int)$pi['qty'], (int)$dr['id_produk']]);
                 }
+            }
+
+            // Deduct stok produk dari paket (jika ada) - Kunjungan Pertama
+            try {
+                $stmt3 = $pdo->prepare("SELECT id_pendaftaran FROM invoice WHERE id=?");
+                $stmt3->execute([$id_invoice]);
+                $id_pend = $stmt3->fetchColumn();
+
+                if ($id_pend) {
+                    // Cek paket dari pendaftaran
+                    $stmt4 = $pdo->prepare("SELECT id_paket_layanan FROM pendaftaran WHERE id=?");
+                    $stmt4->execute([$id_pend]);
+                    $id_paket = $stmt4->fetchColumn();
+
+                    if ($id_paket) {
+                        $stmt5 = $pdo->prepare("SELECT id_produk, jumlah FROM paket_produk WHERE id_paket_layanan = ?");
+                        $stmt5->execute([$id_paket]);
+                        foreach ($stmt5->fetchAll() as $pp) {
+                            safe_query($pdo, "UPDATE produk SET stok = GREATEST(0, stok - ?) WHERE id=?", 
+                                [(int)$pp['jumlah'], (int)$pp['id_produk']]);
+                        }
+                    }
+
+                    // Cek paket dari tindakan (RME)
+                    $stmt6 = $pdo->prepare(
+                        "SELECT tp.id_paket_layanan 
+                         FROM tindakan_pasien tp
+                         JOIN rekam_medis rm ON rm.id = tp.id_rme
+                         WHERE rm.id_pendaftaran = ? AND tp.id_paket_layanan IS NOT NULL"
+                    );
+                    $stmt6->execute([$id_pend]);
+                    foreach ($stmt6->fetchAll() as $tp) {
+                        $stmt7 = $pdo->prepare("SELECT id_produk, jumlah FROM paket_produk WHERE id_paket_layanan = ?");
+                        $stmt7->execute([$tp['id_paket_layanan']]);
+                        foreach ($stmt7->fetchAll() as $pp) {
+                            safe_query($pdo, "UPDATE produk SET stok = GREATEST(0, stok - ?) WHERE id=?", 
+                                [(int)$pp['jumlah'], (int)$pp['id_produk']]);
+                        }
+                    }
+                }
+            } catch (PDOException $e) {
+                throw new BridgeException('DB Error (Fetch Paket Produk): ' . $e->getMessage());
             }
         }
         $pdo->commit();
@@ -2828,6 +2872,7 @@ function rme_latestPerPasien(PDO $pdo, array $data): array
       try {
           $stmt = $pdo->prepare(
               "SELECT pk.id, pk.sisa_kunjungan, pk.total_kunjungan, pl.id_layanan,
+                      pk.id_paket_layanan,
                       rm.id as id_rme
                FROM paket_kunjungan pk
                JOIN paket_layanan pl ON pl.id = pk.id_paket_layanan
@@ -2848,6 +2893,14 @@ function rme_latestPerPasien(PDO $pdo, array $data): array
 
       $pdo->beginTransaction();
       try {
+          // Kurangi stok produk
+          $stmt2 = $pdo->prepare("SELECT id_produk, jumlah FROM paket_produk WHERE id_paket_layanan = ?");
+          $stmt2->execute([$paket['id_paket_layanan']]);
+          foreach ($stmt2->fetchAll() as $pp) {
+              safe_query($pdo, "UPDATE produk SET stok = GREATEST(0, stok - ?) WHERE id=?", 
+                  [(int)$pp['jumlah'], (int)$pp['id_produk']]);
+          }
+
           if ($new_sisa <= 0) {
               safe_query($pdo,
                   "UPDATE paket_kunjungan SET sisa_kunjungan=0, status='selesai' WHERE id=?",

@@ -83,7 +83,10 @@ export default function KaryawanPendaftaranBuatPage() {
     id_layanan: '',
     harga_total: '',
     total_kunjungan: '1',
+    produk: [] as { id_produk: number, jumlah: number }[],
   });
+
+  const [produkList, setProdukList] = useState<any[]>([]);
 
   useEffect(() => {
     if (usePaket && paketLayananList.length === 0) {
@@ -106,14 +109,17 @@ export default function KaryawanPendaftaranBuatPage() {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const [dokterRes, layananRes] = await Promise.all([
+        const [dokterRes, layananRes, produkRes] = await Promise.all([
           fetch('/api/master/dokter?aktif=true'),
           fetch('/api/master/layanan?aktif=true&page=1'),
+          fetch('/api/master/produk?aktif=true'),
         ]);
         const dokterData = await dokterRes.json();
         const layananData = await layananRes.json();
+        const produkData = await produkRes.json();
         setDokterList((dokterData.data || []).map((d: { id: number; nama_lengkap: string }) => ({ id: d.id, nama_lengkap: d.nama_lengkap })));
         setLayananList(layananData.data || []);
+        setProdukList(produkData.data || []);
       } catch (err) {
         console.error('[PendaftaranBuat] Options error:', err);
         toast.error('Gagal memuat opsi dokter/layanan');
@@ -166,13 +172,18 @@ export default function KaryawanPendaftaranBuatPage() {
           id_layanan: parseInt(newPaketForm.id_layanan),
           harga_total: parseFloat(newPaketForm.harga_total),
           total_kunjungan: parseInt(newPaketForm.total_kunjungan),
+          produk: newPaketForm.produk,
         }),
       });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || 'Gagal membuat paket layanan');
       toast.success('Paket layanan baru berhasil dibuat');
       setCreatePaketDialogOpen(false);
-      setNewPaketForm({ nama_paket: '', id_layanan: '', harga_total: '', total_kunjungan: '1' });
+      setNewPaketForm({ nama_paket: '', id_layanan: '', harga_total: '', total_kunjungan: '1', produk: [] });
+      // Refresh paket list
+      const pRes = await fetch('/api/master/paket-layanan?aktif=true');
+      const pData = await pRes.json();
+      setPaketLayananList(pData.data || []);
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : 'Gagal membuat paket layanan');
     } finally {
@@ -510,6 +521,62 @@ export default function KaryawanPendaftaranBuatPage() {
             <div className="space-y-2">
               <Label>Total Kunjungan *</Label>
               <Input type="number" value={newPaketForm.total_kunjungan} onChange={(e) => setNewPaketForm({ ...newPaketForm, total_kunjungan: e.target.value })} min="1" required />
+            </div>
+            
+            {/* Produk Tambahan */}
+            <div className="space-y-2 border-t pt-4">
+              <Label>Produk Tambahan (Per Kunjungan)</Label>
+              <div className="flex gap-2">
+                <select id="paket-produk-select" className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <option value="">Pilih produk...</option>
+                  {produkList.map((p) => (
+                    <option key={p.id} value={p.id}>{p.nama_produk}</option>
+                  ))}
+                </select>
+                <Input id="paket-produk-qty" type="number" defaultValue="1" min="1" className="w-20" />
+                <Button type="button" variant="outline" onClick={() => {
+                  const select = document.getElementById('paket-produk-select') as HTMLSelectElement;
+                  const qty = document.getElementById('paket-produk-qty') as HTMLInputElement;
+                  if (!select.value) return;
+                  const id = parseInt(select.value);
+                  const jumlah = parseInt(qty.value || '1');
+                  const existing = newPaketForm.produk.find(p => p.id_produk === id);
+                  if (existing) {
+                    setNewPaketForm({
+                      ...newPaketForm,
+                      produk: newPaketForm.produk.map(p => p.id_produk === id ? { ...p, jumlah: p.jumlah + jumlah } : p)
+                    });
+                  } else {
+                    setNewPaketForm({
+                      ...newPaketForm,
+                      produk: [...newPaketForm.produk, { id_produk: id, jumlah }]
+                    });
+                  }
+                  select.value = '';
+                  qty.value = '1';
+                }}>Tambah</Button>
+              </div>
+              {newPaketForm.produk.length > 0 && (
+                <div className="mt-2 space-y-2 bg-gray-50 p-2 rounded-md">
+                  {newPaketForm.produk.map((p, idx) => {
+                    const prodInfo = produkList.find(x => x.id === p.id_produk);
+                    return (
+                      <div key={idx} className="flex justify-between items-center text-sm border-b pb-1 last:border-0 last:pb-0">
+                        <span>{prodInfo?.nama_produk || 'Produk'}</span>
+                        <div className="flex items-center gap-2">
+                          <span>{p.jumlah}x</span>
+                          <button type="button" className="text-red-500 hover:text-red-700" onClick={() => {
+                            setNewPaketForm({
+                              ...newPaketForm,
+                              produk: newPaketForm.produk.filter((_, i) => i !== idx)
+                            });
+                          }}>Hapus</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={creatingPaket}>
               {creatingPaket && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}

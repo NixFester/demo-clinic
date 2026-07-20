@@ -183,6 +183,21 @@ export default function AntrianPage() {
     }
   };
 
+  const handlePasienDatang = async (id: string) => {
+    setBusyId(id);
+    try {
+      const res = await fetch(`/api/paket/${id}/kunjungan`, { method: 'POST' });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Gagal memproses kunjungan paket');
+      toast.success(result.message || 'Kunjungan berhasil dicatat');
+      fetchData();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Gagal memproses kunjungan paket');
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const goToRME = (id: string) => router.push(`/dokter/rme/${parseInt(id)}`);
 
   // ── Row actions (role-aware) ──────────────────────────────────────────────
@@ -208,6 +223,19 @@ export default function AntrianPage() {
               <Phone className="h-3 w-3 mr-1" />
             )}
             Panggil
+          </Button>
+        )}
+
+        {/* PASIEN DATANG — untuk Paket Kunjungan yg masih ada sisa */}
+        {item.status === "selesai" && (item.sisa_kunjungan ?? 0) > 0 && isStaff(role) && (
+          <Button
+            size="sm"
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+            disabled={busy}
+            onClick={() => handlePasienDatang(item.id_pendaftaran ?? item.id)}
+          >
+            {busy && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+            Pasien Datang
           </Button>
         )}
 
