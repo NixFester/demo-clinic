@@ -159,7 +159,8 @@ export default function PaketLayananPage() {
     const produkHarga = produkItems.reduce((sum, p) => {
       const hargaSatuan = Number(p.harga_satuan) || 0;
       const jumlah = Number(p.jumlah) || 0;
-      return sum + (hargaSatuan * jumlah);
+      const totalKunjungan = Number(form.total_kunjungan) || 1;
+      return sum + (hargaSatuan * jumlah * totalKunjungan);
     }, 0);
     return layananHarga + produkHarga;
   };
@@ -370,8 +371,14 @@ export default function PaketLayananPage() {
 
             {/* Produk Section */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Produk dalam Paket</Label>
+              <div className="flex items-start justify-between">
+                <div>
+                  <Label>Produk dalam Paket</Label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Isi jumlah stok produk <b>per 1x kunjungan</b>. <br/>
+                    Total stok yang akan terpakai = Total kunjungan × Jumlah ini.
+                  </p>
+                </div>
                 <Button type="button" size="sm" variant="outline" onClick={openAddProduk}>
                   <Plus className="h-3 w-3 mr-1" /> Tambah Produk
                 </Button>
@@ -395,7 +402,10 @@ export default function PaketLayananPage() {
                           className="w-20"
                         />
                         <span className="text-xs text-gray-500">x</span>
-                        <span className="text-sm font-medium w-24 text-right">{formatCurrency((Number(p.harga_satuan) || 0) * (Number(p.jumlah) || 0))}</span>
+                        <div className="flex flex-col items-end w-28">
+                          <span className="text-sm font-medium">{formatCurrency((Number(p.harga_satuan) || 0) * (Number(p.jumlah) || 0))}</span>
+                          <span className="text-[10px] text-gray-500">per kunjungan</span>
+                        </div>
                       </div>
                       <Button type="button" size="icon" variant="ghost" className="h-8 w-8 text-red-500" onClick={() => removeProduk(p.id_produk)}>
                         <X className="h-4 w-4" />
@@ -413,8 +423,8 @@ export default function PaketLayananPage() {
                 <span>{selectedLayanan ? formatCurrency(selectedLayanan.harga * Number(form.total_kunjungan) || 0) : '-'}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span>Total Harga Produk</span>
-                <span>{formatCurrency(produkItems.reduce((sum, p) => sum + ((Number(p.harga_satuan) || 0) * (Number(p.jumlah) || 0)), 0))}</span>
+                <span>Total Harga Produk ({form.total_kunjungan}x kunjungan)</span>
+                <span>{formatCurrency(produkItems.reduce((sum, p) => sum + ((Number(p.harga_satuan) || 0) * (Number(p.jumlah) || 0) * (Number(form.total_kunjungan) || 1)), 0))}</span>
               </div>
               <div className="flex justify-between font-bold text-base border-t pt-2">
                 <span>Total Harga Paket</span>
