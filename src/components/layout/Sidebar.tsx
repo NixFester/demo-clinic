@@ -50,6 +50,7 @@ function getNavItems(role: string): NavItem[] {
       { href: "/admin/dokter", label: "Dokter", icon: <Stethoscope className="h-4 w-4" /> },
       { href: "/admin/spesialisasi", label: "Spesialisasi", icon: <Stethoscope className="h-4 w-4" /> },
       { href: "/admin/layanan", label: "Layanan", icon: <Briefcase className="h-4 w-4" /> },
+      { href: "/admin/paket-layanan", label: "Paket Layanan", icon: <ShoppingCart className="h-4 w-4" /> },
       { href: "/admin/produk", label: "Produk", icon: <Package className="h-4 w-4" /> },
       { href: "/admin/jadwal-dokter", label: "Jadwal Dokter", icon: <CalendarDays className="h-4 w-4" /> },
       { href: "/admin/diagnosa", label: "Diagnosa ICD-10", icon: <FileText className="h-4 w-4" /> },

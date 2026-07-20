@@ -213,7 +213,7 @@ export default function LayananPage() {
                     <TableHead>Nama</TableHead>
                     <TableHead>Kategori</TableHead>
                     <TableHead>Harga</TableHead>
-                    <TableHead>Durasi</TableHead>
+                    <TableHead>Kuantitas</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
@@ -231,7 +231,7 @@ export default function LayananPage() {
                         <TableCell className="font-medium">{item.nama_layanan}</TableCell>
                         <TableCell>{getKategoriLabel(item.kategori) || '-'}</TableCell>
                         <TableCell>{formatCurrency(item.harga)}</TableCell>
-                        <TableCell>{item.durasi_menit} mnt</TableCell>
+                        <TableCell>{item.durasi_menit}</TableCell>
                         <TableCell>
                           <StatusBadge status={item.is_aktif == 1 ? 'aktif' : 'non-aktif'} />
                         </TableCell>
@@ -300,13 +300,14 @@ export default function LayananPage() {
                 </select>
               </div>
               <div className="space-y-2">
-                <Label>Durasi (menit)</Label>
+                <Label>Kuantitas</Label>
                 <Input
                   type="number"
                   value={form.durasi_menit}
                   onChange={(e) => setForm({ ...form, durasi_menit: e.target.value })}
-                  placeholder="30"
+                  placeholder="Jumlah sesi"
                 />
+                <p className="text-xs text-gray-500">Jumlah sesi atau prosedur dalam layanan ini</p>
               </div>
             </div>
 

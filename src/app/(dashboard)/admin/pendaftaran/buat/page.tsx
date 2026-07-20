@@ -31,6 +31,16 @@ interface PasienOption {
   nik?: string;
 }
 
+interface PaketOption {
+  id: number;
+  nama_paket: string;
+  nama_layanan: string;
+  harga_total: number;
+  total_kunjungan: number;
+  harga_layanan: number;
+  produk?: Array<{ id_produk: number; nama_produk: string; jumlah: number; harga_satuan: number }>;
+}
+
 type Step = 1 | 2;
 
 export default function PendaftaranBuatPage() {
@@ -39,12 +49,15 @@ export default function PendaftaranBuatPage() {
   const [step, setStep] = useState<Step>(1);
   const [dokterList, setDokterList] = useState<DokterOption[]>([]);
   const [layananList, setLayananList] = useState<LayananOption[]>([]);
+  const [paketList, setPaketList] = useState<PaketOption[]>([]);
   const [selectedPasien, setSelectedPasien] = useState<PasienOption>({});
   const [loading, setLoading] = useState(false);
+  const [isPaket, setIsPaket] = useState(false);
 
   const [form, setForm] = useState({
     id_dokter: '',
     id_layanan: '',
+    id_paket_layanan: '',
     keluhan_utama: '',
     jenis_kunjungan: 'baru',
     catatan: '',
@@ -53,14 +66,17 @@ export default function PendaftaranBuatPage() {
   useEffect(() => {
     const fetchOptions = async () => {
       try {
-        const [dokterRes, layananRes] = await Promise.all([
+        const [dokterRes, layananRes, paketRes] = await Promise.all([
           fetch('/api/master/dokter?aktif=true'),
           fetch('/api/master/layanan?aktif=true&page=1'),
+          fetch('/api/master/paket-layanan?aktif=true&page=1'),
         ]);
         const dokterData = await dokterRes.json();
         const layananData = await layananRes.json();
+        const paketData = await paketRes.json();
         setDokterList((dokterData.data || []).map((d: { id: number; nama_lengkap: string }) => ({ id: d.id, nama_lengkap: d.nama_lengkap })));
         setLayananList(layananData.data || []);
+        setPaketList((paketData.data || []) as PaketOption[]);
       } catch (err) {
         console.error('[PendaftaranBuatPage] Options error:', err);
       }
@@ -75,8 +91,8 @@ export default function PendaftaranBuatPage() {
       toast.error('Pilih pasien terlebih dahulu');
       return;
     }
-    if (!form.id_dokter || !form.id_layanan) {
-      toast.error('Pilih dokter dan layanan');
+    if (!form.id_dokter || (!isPaket && !form.id_layanan) || (isPaket && !form.id_paket_layanan)) {
+      toast.error('Pilih dokter dan layanan/paket yang sesuai');
       return;
     }
 
@@ -89,7 +105,8 @@ export default function PendaftaranBuatPage() {
         body: JSON.stringify({
           id_pasien: selectedPasien.id,
           id_dokter: parseInt(form.id_dokter),
-          id_layanan: parseInt(form.id_layanan),
+          id_layanan: !isPaket ? (form.id_layanan ? parseInt(form.id_layanan) : null) : null,
+          id_paket_layanan: isPaket ? (form.id_paket_layanan ? parseInt(form.id_paket_layanan) : null) : null,
           id_karyawan: userId ? parseInt(userId) : 0,
           keluhan_utama: form.keluhan_utama,
           jenis_kunjungan: form.jenis_kunjungan,
@@ -112,6 +129,16 @@ export default function PendaftaranBuatPage() {
   };
 
   const selectedLayanan = layananList.find(l => l.id === parseInt(form.id_layanan));
+  const selectedPaket = paketList.find(p => p.id === parseInt(form.id_paket_layanan));
+
+  const toggleServiceMode = (value: boolean) => {
+    setIsPaket(value);
+    setForm((prev) => ({
+      ...prev,
+      id_layanan: value ? '' : prev.id_layanan,
+      id_paket_layanan: value ? prev.id_paket_layanan : '',
+    }));
+  };
 
   return (
     <div className="space-y-6">
@@ -200,7 +227,33 @@ export default function PendaftaranBuatPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Layanan</Label>
+                  <Label>Jenis Layanan</Label>
+                  <div className="flex gap-2">
+                    <Button type="button" variant={!isPaket ? 'default' : 'outline'} className="flex-1" onClick={() => toggleServiceMode(false)}>
+                      Layanan Regular
+                    </Button>
+                    <Button type="button" variant={isPaket ? 'default' : 'outline'} className="flex-1" onClick={() => toggleServiceMode(true)}>
+                      Paket Layanan
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{isPaket ? 'Paket Layanan' : 'Layanan'}</Label>
+                {isPaket ? (
+                  <select
+                    value={form.id_paket_layanan}
+                    onChange={(e) => setForm({ ...form, id_paket_layanan: e.target.value })}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    required
+                  >
+                    <option value="">Pilih paket...</option>
+                    {paketList.map((p) => (
+                      <option key={p.id} value={p.id}>{p.nama_paket}</option>
+                    ))}
+                  </select>
+                ) : (
                   <select
                     value={form.id_layanan}
                     onChange={(e) => setForm({ ...form, id_layanan: e.target.value })}
@@ -212,13 +265,28 @@ export default function PendaftaranBuatPage() {
                       <option key={l.id} value={l.id}>{l.nama_layanan}</option>
                     ))}
                   </select>
-                </div>
+                )}
               </div>
 
-              {selectedLayanan && (
+              {selectedLayanan && !isPaket && (
                 <div className="p-3 bg-gray-50 rounded-lg text-sm">
                   <span className="text-gray-500">Harga layanan:</span>{' '}
                   <span className="font-medium">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(selectedLayanan.harga)}</span>
+                </div>
+              )}
+
+              {selectedPaket && isPaket && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm space-y-2">
+                  <div className="font-medium text-amber-800">{selectedPaket.nama_paket}</div>
+                  <div className="text-gray-600">Layanan dasar: {selectedPaket.nama_layanan}</div>
+                  <div className="text-gray-600">Total kunjungan: {selectedPaket.total_kunjungan}x • Harga paket: {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(selectedPaket.harga_total)}</div>
+                  {selectedPaket.produk && selectedPaket.produk.length > 0 && (
+                    <ul className="list-disc pl-5 text-gray-600">
+                      {selectedPaket.produk.map((produk) => (
+                        <li key={produk.id_produk}>{produk.nama_produk} • {produk.jumlah}x</li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               )}
 

@@ -379,22 +379,13 @@ export default function JadwalDokterView({
             </div>
 
             <div className="space-y-2">
-              <Label>Hari *</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {HARI_OPTIONS.map((h) => (
-                  <label key={h.value} className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-50 text-sm">
-                    <input
-                      type="radio"
-                      name="hari"
-                      value={h.value}
-                      checked={form.hari === h.value}
-                      onChange={(e) => setForm({ ...form, hari: e.target.value })}
-                      className="accent-emerald-600"
-                    />
-                    {h.label}
-                  </label>
-                ))}
-              </div>
+              <Label>Hari Praktik *</Label>
+              <Input
+                value={form.hari}
+                onChange={(e) => setForm({ ...form, hari: e.target.value })}
+                placeholder="Contoh: Senin, Rabu, Jumat"
+              />
+              <p className="text-xs text-gray-500">Sebutkan hari praktik (pisahkan dengan koma untuk beberapa hari)</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

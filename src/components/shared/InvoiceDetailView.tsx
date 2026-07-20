@@ -245,6 +245,9 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
         return status.toUpperCase();
       };
 
+      // Filter to show only services (layanan/tindakan), not products
+      const pdfServiceItems = serviceItems;
+
       const InvoicePDF = (
         <Document>
           <Page size="A4" style={s.page}>
@@ -290,7 +293,7 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
                   <Text style={[s.tableHeaderCell, { width: '20%' }]}>Harga</Text>
                   <Text style={[s.tableHeaderCell, { width: '15%' }]}>Subtotal</Text>
                 </View>
-                {invoice.items.map((item, i) => (
+                {pdfServiceItems.map((item, i) => (
                   <View key={item.id} style={s.tableRow}>
                     <Text style={[s.tableCell, { width: '5%' }]}>{i + 1}</Text>
                     <Text style={[s.tableCell, { width: '35%' }]}>{item.nama_item || '-'}</Text>
@@ -399,6 +402,10 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
   );
 
   const isBelumBayar = invoice.status === 'belum_bayar';
+  // Filter to show only services (layanan/tindakan), not products
+  const serviceItems = invoice.items.filter(
+    item => item.jenis === 'layanan' || item.jenis === 'tindakan'
+  );
 
   return (
     <div className="space-y-6">
@@ -429,11 +436,11 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
       <Card>
         <CardHeader><CardTitle className="text-base">Detail Item</CardTitle></CardHeader>
         <CardContent>
-          {invoice.items.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">Tidak ada item pada invoice ini</div>
+          {serviceItems.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">Tidak ada item layanan pada invoice ini</div>
           ) : isMobile ? (
   <div className="space-y-2">
-    {invoice.items.map((item) => (
+    {serviceItems.map((item) => (
       <div key={item.id} className="flex justify-between items-start py-2 border-b last:border-0">
         <div className="flex-1 pr-2">
           <p className="text-sm font-medium">{item.nama_item}</p>
@@ -456,7 +463,7 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
                   </tr>
                 </thead>
                 <tbody>
-                  {invoice.items.map((item) => (
+                  {serviceItems.map((item) => (
                     <tr key={item.id} className="border-t">
                       <td className="px-4 py-2">{item.nama_item || '-'}</td>
                       <td className="px-4 py-2">{item.jenis}</td>

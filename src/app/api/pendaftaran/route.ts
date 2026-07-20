@@ -44,8 +44,11 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    // Add id_karyawan from session
     body.id_karyawan = parseInt(session.user.id);
+
+    if (!body.id_paket_layanan) {
+      body.id_layanan = null;}
+
     console.log("[API /pendaftaran] POST creating registration for pasien:", body.id_pasien);
     const result = await callBridge("pendaftaran.store", body);
     return NextResponse.json(result, { status: 201 });

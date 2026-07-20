@@ -43,7 +43,7 @@ export type GolonganDarah      = 'A' | 'B' | 'AB' | 'O' | 'tidak_diketahui';
 export type JenisKelamin       = 'L' | 'P';
 export type HariEnum           = 'senin' | 'selasa' | 'rabu' | 'kamis' | 'jumat' | 'sabtu';
 export type JenisKunjungan     = 'baru' | 'lama' | 'kontrol';
-export type StatusAntrian      = 'menunggu' | 'dipanggil' | 'selesai' | 'batal';
+export type StatusAntrian      = 'menunggu' | 'dipanggil' | 'selesai' | 'batal' | 'paket';
 export type StatusRME          = 'draft' | 'final' | 'batal';
 export type StatusInvoice      = 'belum_bayar' | 'lunas' | 'batal';
 export type MetodePembayaran   = 'tunai' | 'transfer' | 'qris' | 'debit';
@@ -150,6 +150,35 @@ export interface Produk extends Timestamps {
 // produk.store      → InsertResponse
 // produk.update     → SuccessResponse
 // produk.deductStok → SuccessResponse
+
+// =============================================================================
+// PAKET LAYANAN — paket_layanan.index | .store | .update | .delete
+// =============================================================================
+
+export interface PaketProdukItem {
+  id_produk: number;
+  nama_produk: string;
+  jumlah: number;
+  harga_satuan: number;
+}
+
+export interface PaketLayanan extends Timestamps {
+  id: number;
+  nama_paket: string;
+  id_layanan: number;
+  nama_layanan: string;
+  harga_layanan: number;
+  harga_total: number;
+  total_kunjungan: number;
+  sisa_kunjungan: number;
+  is_aktif: 0 | 1;
+  produk: PaketProdukItem[];
+}
+
+// paket_layanan.index  → PaginatedResponse<PaketLayanan>
+// paket_layanan.store  → InsertResponse
+// paket_layanan.update → SuccessResponse
+// paket_layanan.delete → SuccessResponse
 
 // =============================================================================
 // JADWAL DOKTER — jadwal.index | .store | .update
@@ -334,7 +363,7 @@ export interface AntrianItem {
   tanggal:         string;
   keluhan_utama:   string | null;
   jenis_kunjungan: JenisKunjungan;
-  status:          StatusAntrian;
+  status:          StatusAntrian | 'paket';
   catatan:         string | null;
   created_at:      string;
   // pasien
@@ -349,6 +378,11 @@ export interface AntrianItem {
   // RME (null if not yet created)
   id_rme:          number | null;
   status_rme:      StatusRME | null;
+  // paket (optional fields for multi-visit paket layanan)
+  id_paket?:       number | null;
+  nama_paket?:     string | null;
+  total_kunjungan?: number;
+  sisa_kunjungan?: number;
 }
 
 // antrian.hari_ini → ListResponse<AntrianItem>

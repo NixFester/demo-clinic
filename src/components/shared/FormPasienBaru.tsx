@@ -67,8 +67,8 @@ export default function FormPasienBaru() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
               <div className="space-y-2">
-                <Label>NIK *</Label>
-                <Input value={form.nik} onChange={(e) => setForm({ ...form, nik: e.target.value })} required maxLength={16} placeholder="16 digit NIK" />
+                <Label>NIK (Opsional)</Label>
+                <Input value={form.nik} onChange={(e) => setForm({ ...form, nik: e.target.value })} maxLength={16} placeholder="Kosongkan jika tidak ada KTP" />
               </div>
               <div className="space-y-2">
                 <Label>Nama Lengkap *</Label>

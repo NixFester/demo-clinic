@@ -24,6 +24,7 @@ import {
   ClipboardList,
   Plus,
   Package,
+  UserCheck,
 } from "lucide-react";
 import {
   Dialog,
@@ -45,6 +46,7 @@ const STATUS_STYLE: Record<string, string> = {
   batal: "bg-red-100    text-red-800    border-red-300",
   draft: "bg-gray-100   text-gray-800   border-gray-300",
   final: "bg-green-100  text-green-800  border-green-300",
+  paket: "bg-purple-100 text-purple-800 border-purple-300",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -54,6 +56,7 @@ const STATUS_LABEL: Record<string, string> = {
   batal: "Batal",
   draft: "Draft",
   final: "Final",
+  paket: "Paket",
 };
 
 function StatusChip({ status }: { status: string }) {
@@ -182,6 +185,28 @@ export default function AntrianPage() {
 
   const goToRME = (id: string) => router.push(`/dokter/rme/${parseInt(id)}`);
 
+  const handlePasienDatang = async (id: string) => {
+    setBusyId(id);
+    try {
+      const res = await fetch(`/api/paket/${id}/kunjungan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}));
+        throw new Error(json.error ?? "Gagal mencatat kunjungan");
+      }
+      toast.success("Kunjungan berhasil dicatat");
+      fetchData();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Gagal mencatat kunjungan",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   // ── Row actions (role-aware) ──────────────────────────────────────────────
 
   function RowActions({ item }: { item: AntrianItem }) {
@@ -208,16 +233,34 @@ export default function AntrianPage() {
           </Button>
         )}
 
-        {/* SELESAI — karyawan only on 'dipanggil' */}
-        {item.status === "dipanggil" && role === "karyawan" && (
+        {/* BUAT RME — dokter OR karyawan on 'dipanggil' */}
+        {item.status === "dipanggil" && (isDokter(role) || role === "karyawan") && (
           <Button
             size="sm"
             variant="outline"
-            disabled={busy}
-            onClick={() => updateStatus(item.id, "selesai")}
+            className="text-emerald-700 border-emerald-300 hover:bg-emerald-50"
+            onClick={() => goToRME(item.id_pendaftaran ?? item.id)}
           >
-            {busy && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
-            Selesai
+            <FileText className="h-3 w-3 mr-1" />
+            Buat RME
+          </Button>
+        )}
+
+        {/* PASIEN DATANG — karyawan on 'paket' for paket layanan multi-visit */}
+        {item.status === "paket" && role === "karyawan" && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-blue-700 border-blue-300 hover:bg-blue-50"
+            disabled={busy}
+            onClick={() => handlePasienDatang(item.id)}
+          >
+            {busy ? (
+              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            ) : (
+              <UserCheck className="h-3 w-3 mr-1" />
+            )}
+            Pasien Datang
           </Button>
         )}
 

@@ -26,6 +26,11 @@ const getStatusLabel = (status: string) => {
 };
 
 export function buildReceiptElement(invoice: InvoiceDetail) {
+  // Filter to show only services (layanan/tindakan), not products
+  const serviceItems = invoice.items.filter(
+    item => item.jenis === 'layanan' || item.jenis === 'tindakan'
+  );
+
   return (
     <Printer type="epson" width={32} characterSet="pc437_usa">
       {/* ── Header ── */}
@@ -56,7 +61,7 @@ export function buildReceiptElement(invoice: InvoiceDetail) {
       {/* ── Items ── */}
       <Text bold>Daftar Belanja:</Text>
       <Line />
-      {invoice.items.map((item) => (
+      {serviceItems.map((item) => (
         <>
           <Text key={`name-${item.id}`} wrap={true}>{item.nama_item}</Text>
           <Row
@@ -121,6 +126,10 @@ export function buildReceiptElement(invoice: InvoiceDetail) {
 /** HTML preview — shown on screen, not sent to printer */
 export function InvoiceThermalPrint({ invoice }: Props) {
   const sisaTagihan = (invoice.total || 0) - (invoice.total_dibayar || 0);
+  // Filter to show only services (layanan/tindakan), not products
+  const serviceItems = invoice.items.filter(
+    item => item.jenis === 'layanan' || item.jenis === 'tindakan'
+  );
 
   return (
     <div className="font-mono text-[11px] leading-snug text-black w-full bg-white p-3">
@@ -161,7 +170,7 @@ export function InvoiceThermalPrint({ invoice }: Props) {
       {/* Items */}
       <div className="mb-2">
         <p className="font-bold text-[10px] mb-1">Daftar Belanja:</p>
-        {invoice.items.map((item) => (
+        {serviceItems.map((item) => (
           <div key={item.id} className="mb-1">
             <p className="text-[11px] font-medium">{item.nama_item}</p>
             <div className="flex justify-between text-[10px] pl-2">

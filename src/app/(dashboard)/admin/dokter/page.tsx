@@ -90,6 +90,16 @@ export default function DokterPage() {
     setStep('dokter');
   };
 
+  const handleSkipDokter = () => {
+    toast.success('Pengguna dokter berhasil dibuat. Profil dokter dapat ditambahkan nanti.');
+    setDialogOpen(false);
+    setStep('pengguna');
+    setPenggunaForm({ nama_lengkap: '', username: '', password: '' });
+    setDokterForm({ id_pengguna: '', id_spesialisasi: '', no_sip: '' });
+    setCreatedPenggunaId(null);
+    fetchData();
+  };
+
   const handleSubmitDokter = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -221,12 +231,13 @@ export default function DokterPage() {
               <form onSubmit={handleSubmitDokter} className="space-y-4">
                 {!editDokter && (
                   <div className="p-3 bg-emerald-50 rounded-lg text-sm text-emerald-700">
-                    Pengguna: {penggunaForm.nama_lengkap || penggunaList.find(p => p.id === createdPenggunaId)?.nama_lengkap || `ID #${createdPenggunaId}`}
+                    <p className="font-medium">Pengguna: {penggunaForm.nama_lengkap || penggunaList.find(p => p.id === createdPenggunaId)?.nama_lengkap || `ID #${createdPenggunaId}`}</p>
+                    <p className="text-xs mt-1">Profil dokter opsional - dapat ditambahkan nanti.</p>
                   </div>
                 )}
                 <div className="space-y-2">
                   <Label>Spesialisasi</Label>
-                  <select value={dokterForm.id_spesialisasi} onChange={(e) => setDokterForm({ ...dokterForm, id_spesialisasi: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm" required>
+                  <select value={dokterForm.id_spesialisasi} onChange={(e) => setDokterForm({ ...dokterForm, id_spesialisasi: e.target.value })} className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
                     <option value="">Pilih spesialisasi...</option>
                     {spesialisasiList.map((s) => (
                       <option key={s.id} value={s.id}>{s.nama_spesialisasi}</option>
@@ -235,12 +246,17 @@ export default function DokterPage() {
                 </div>
                 <div className="space-y-2">
                   <Label>No. SIP</Label>
-                  <Input value={dokterForm.no_sip} onChange={(e) => setDokterForm({ ...dokterForm, no_sip: e.target.value })} required />
+                  <Input value={dokterForm.no_sip} onChange={(e) => setDokterForm({ ...dokterForm, no_sip: e.target.value })} />
                 </div>
                 <div className="flex gap-2">
                   {!editDokter && (
                     <Button type="button" variant="outline" onClick={() => setStep('pengguna')}>
                       Kembali
+                    </Button>
+                  )}
+                  {!editDokter && (
+                    <Button type="button" variant="ghost" onClick={handleSkipDokter}>
+                      Lewati
                     </Button>
                   )}
                   <Button type="submit" className="flex-1 bg-emerald-600 hover:bg-emerald-700" disabled={submitting}>
