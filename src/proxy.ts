@@ -63,7 +63,9 @@ export async function proxy(request: NextRequest) {
     role !== "dokter" &&
     role !== "superadmin"
   ) {
-    return NextResponse.redirect(new URL("/unauthorized", request.url));
+    if (!(role === "karyawan" && pathname.startsWith("/dokter/rme"))) {
+      return NextResponse.redirect(new URL("/unauthorized", request.url));
+    }
   }
   if (
     pathname.startsWith("/karyawan") &&

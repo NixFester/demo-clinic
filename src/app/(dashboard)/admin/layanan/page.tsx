@@ -24,9 +24,9 @@ import { Layanan } from '@/types/api-items';
  * and is friendlier UX than a plain Input.
  */
 const KATEGORI_OPTIONS = [
-  { value: 'kecantikan',  label: 'Kecantikan' },
-  { value: 'medis',       label: 'Medis' },
-  { value: 'konsultasi',  label: 'Konsultasi' },
+  { value: 'kecantikan', label: 'Kecantikan' },
+  { value: 'medis', label: 'Medis' },
+  { value: 'konsultasi', label: 'Konsultasi' },
 ];
 
 const DEFAULT_FORM = {
@@ -126,15 +126,15 @@ export default function LayananPage() {
 
       const res = editId
         ? await fetch(`/api/master/layanan/${editId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          })
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
         : await fetch('/api/master/layanan', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
-          });
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
 
       if (!res.ok) {
         const result = await res.json();
@@ -213,7 +213,6 @@ export default function LayananPage() {
                     <TableHead>Nama</TableHead>
                     <TableHead>Kategori</TableHead>
                     <TableHead>Harga</TableHead>
-                    <TableHead>Kuantitas</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
@@ -231,7 +230,6 @@ export default function LayananPage() {
                         <TableCell className="font-medium">{item.nama_layanan}</TableCell>
                         <TableCell>{getKategoriLabel(item.kategori) || '-'}</TableCell>
                         <TableCell>{formatCurrency(item.harga)}</TableCell>
-                        <TableCell>{item.durasi_menit}</TableCell>
                         <TableCell>
                           <StatusBadge status={item.is_aktif == 1 ? 'aktif' : 'non-aktif'} />
                         </TableCell>
@@ -299,16 +297,7 @@ export default function LayananPage() {
                   ))}
                 </select>
               </div>
-              <div className="space-y-2">
-                <Label>Kuantitas</Label>
-                <Input
-                  type="number"
-                  value={form.durasi_menit}
-                  onChange={(e) => setForm({ ...form, durasi_menit: e.target.value })}
-                  placeholder="Jumlah sesi"
-                />
-                <p className="text-xs text-gray-500">Jumlah sesi atau prosedur dalam layanan ini</p>
-              </div>
+
             </div>
 
             <div className="grid grid-cols-2 gap-4">

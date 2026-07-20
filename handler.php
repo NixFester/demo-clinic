@@ -754,6 +754,7 @@ function antrian_hari_ini(PDO $pdo, array $data): array
     $params    = [date('Y-m-d')];
     $sql       = "SELECT p.id, p.no_antrian, p.status, p.keluhan_utama, p.jenis_kunjungan,
                          p.tanggal, p.created_at,
+                         p.id_paket_layanan as id_paket,
                          pas.id as id_pasien,
                          p.id as id_pendaftaran,
                          pas.nama_lengkap as nama_pasien, pas.no_rekam_medis,
@@ -862,7 +863,7 @@ function pendaftaran_store(PDO $pdo, array $data): array
 
     $no_antrian = generate_no_antrian($pdo, $tanggal);
     $id_paket = !empty($data['id_paket_layanan']) ? (int)$data['id_paket_layanan'] : null;
-    $status = $id_paket ? 'paket' : 'menunggu';
+    $status = 'menunggu';
 
     safe_query($pdo,
         "INSERT INTO pendaftaran
@@ -2791,7 +2792,7 @@ function rme_latestPerPasien(PDO $pdo, array $data): array
                FROM paket_layanan pl
                JOIN pendaftaran p ON p.id_paket_layanan = pl.id
                LEFT JOIN rekam_medis rm ON rm.id_pendaftaran = p.id
-               WHERE p.id = ? AND p.status = 'paket'
+               WHERE p.id = ? AND p.status = 'menunggu'
                LIMIT 1"
           );
           $stmt->execute([$id_pendaftaran]);

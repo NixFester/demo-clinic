@@ -59,7 +59,17 @@ const STATUS_LABEL: Record<string, string> = {
   paket: "Paket",
 };
 
-function StatusChip({ status }: { status: string }) {
+function StatusChip({ status, isPaket }: { status: string, isPaket?: boolean }) {
+  if (isPaket && status === 'menunggu') {
+    return (
+      <Badge
+        variant="outline"
+        className="bg-purple-100 text-purple-800 border-purple-300"
+      >
+        Paket (Menunggu)
+      </Badge>
+    );
+  }
   return (
     <Badge
       variant="outline"
@@ -215,7 +225,7 @@ export default function AntrianPage() {
     return (
       <div className="flex items-center justify-end gap-2">
         {/* PANGGIL — admin / karyawan / dokter on 'menunggu' */}
-        {item.status === "menunggu" && (isStaff(role) || isDokter(role)) && (
+        {item.status === "menunggu" && !item.id_paket && (isStaff(role) || isDokter(role)) && (
           <Button
             size="sm"
             variant="outline"
@@ -247,7 +257,7 @@ export default function AntrianPage() {
         )}
 
         {/* PASIEN DATANG — karyawan on 'paket' for paket layanan multi-visit */}
-        {item.status === "paket" && role === "karyawan" && (
+        {item.status === "menunggu" && !!item.id_paket && role === "karyawan" && (
           <Button
             size="sm"
             variant="outline"
@@ -406,7 +416,7 @@ export default function AntrianPage() {
                     <span className="font-mono font-bold text-xl">
                       {item.no_antrian}
                     </span>
-                    <StatusChip status={item.status} />
+                    <StatusChip status={item.status} isPaket={!!item.id_paket} />
                   </div>
                   <div>
                     <p className="font-medium">{item.nama_pasien}</p>
@@ -466,7 +476,7 @@ export default function AntrianPage() {
                       )}
 
                       <TableCell>
-                        <StatusChip status={item.status} />
+                        <StatusChip status={item.status} isPaket={!!item.id_paket} />
                       </TableCell>
 
                       {showRMEColumn && (
