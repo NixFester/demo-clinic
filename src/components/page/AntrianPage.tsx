@@ -60,16 +60,6 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 function StatusChip({ status, isPaket }: { status: string, isPaket?: boolean }) {
-  if (isPaket && status === 'menunggu') {
-    return (
-      <Badge
-        variant="outline"
-        className="bg-purple-100 text-purple-800 border-purple-300"
-      >
-        Paket (Menunggu)
-      </Badge>
-    );
-  }
   return (
     <Badge
       variant="outline"
