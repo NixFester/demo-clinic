@@ -2928,7 +2928,7 @@ function rme_latestPerPasien(PDO $pdo, array $data): array
                JOIN paket_layanan pl ON pl.id = pk.id_paket_layanan
                JOIN pendaftaran p ON p.id = pk.id_pendaftaran
                LEFT JOIN rekam_medis rm ON rm.id_pendaftaran = p.id
-               WHERE p.id = ? AND p.status = 'menunggu'
+               WHERE p.id = ? AND p.status = 'selesai'
                LIMIT 1"
           );
           $stmt->execute([$id_pendaftaran]);
