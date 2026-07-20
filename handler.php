@@ -1125,7 +1125,12 @@ function rme_store(PDO $pdo, array $data): array
         // Cek tidak ada RME duplikat
         $stmt = $pdo->prepare("SELECT id FROM rekam_medis WHERE id_pendaftaran = ?");
         $stmt->execute([(int)$data['id_pendaftaran']]);
-        if ($stmt->fetch()) throw new BridgeException('RME untuk pendaftaran ini sudah ada');
+        $existing = $stmt->fetch();
+        if ($existing) {
+            $data['id'] = $existing['id'];
+            rme_update($pdo, $data);
+            return ['id' => (int)$existing['id']];
+        }
 
         // Ambil info layanan/paket dari pendaftaran
         $stmtPend = $pdo->prepare("SELECT id_layanan, id_paket_layanan FROM pendaftaran WHERE id = ?");
