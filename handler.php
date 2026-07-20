@@ -1243,13 +1243,19 @@ function tindakan_store(PDO $pdo, array $data): array
             $id_resep = (int)$resep['id'];
         }
 
-        $stmtProduk = $pdo->prepare("SELECT id_produk, jumlah FROM paket_produk WHERE id_paket_layanan = ?");
+        $stmtProduk = $pdo->prepare(
+            "SELECT pp.id_produk, pp.jumlah, pl.total_kunjungan 
+             FROM paket_produk pp 
+             JOIN paket_layanan pl ON pl.id = pp.id_paket_layanan 
+             WHERE pp.id_paket_layanan = ?"
+        );
         $stmtProduk->execute([(int)$data['id_paket_layanan']]);
         foreach ($stmtProduk->fetchAll() as $pp) {
+            $jml_per_visit = max(1, (int)ceil($pp['jumlah'] / max(1, (int)$pp['total_kunjungan'])));
             safe_query($pdo,
                 "INSERT INTO detail_resep (id_resep, id_produk, jumlah, dosis, aturan_pakai, keterangan, id_paket_layanan)
                  VALUES (?,?,?,?,?,?,?)",
-                [$id_resep, $pp['id_produk'], $pp['jumlah'], '', 'Sesuai Paket', 'Dari paket layanan', (int)$data['id_paket_layanan']]
+                [$id_resep, $pp['id_produk'], $jml_per_visit, '', 'Sesuai Paket', 'Dari paket layanan', (int)$data['id_paket_layanan']]
             );
         }
 
@@ -2954,12 +2960,11 @@ function rme_latestPerPasien(PDO $pdo, array $data): array
           $stmt = $pdo->prepare(
               "SELECT pk.id, pk.sisa_kunjungan, pk.total_kunjungan, pl.id_layanan,
                       pk.id_paket_layanan,
-                      rm.id as id_rme
+                      p.id_pasien, p.id_dokter, p.id_karyawan
                FROM paket_kunjungan pk
                JOIN paket_layanan pl ON pl.id = pk.id_paket_layanan
                JOIN pendaftaran p ON p.id = pk.id_pendaftaran
-               LEFT JOIN rekam_medis rm ON rm.id_pendaftaran = p.id
-               WHERE p.id = ? AND p.status = 'selesai'
+               WHERE p.id = ? AND pk.sisa_kunjungan > 0
                LIMIT 1"
           );
           $stmt->execute([$id_pendaftaran]);
@@ -2971,6 +2976,8 @@ function rme_latestPerPasien(PDO $pdo, array $data): array
       if (!$paket) throw new BridgeException('Paket tidak ditemukan atau sudah selesai', 404);
 
       $new_sisa = (int)$paket['sisa_kunjungan'] - 1;
+      $kunjungan_ke = (int)$paket['total_kunjungan'] - $new_sisa;
+      $total_kunjungan = max(1, (int)$paket['total_kunjungan']);
 
       $pdo->beginTransaction();
       try {
@@ -2978,42 +2985,39 @@ function rme_latestPerPasien(PDO $pdo, array $data): array
           $stmt2 = $pdo->prepare("SELECT id_produk, jumlah FROM paket_produk WHERE id_paket_layanan = ?");
           $stmt2->execute([$paket['id_paket_layanan']]);
           foreach ($stmt2->fetchAll() as $pp) {
+              $jml_per_visit = max(1, (int)ceil($pp['jumlah'] / $total_kunjungan));
               safe_query($pdo, "UPDATE produk SET stok = GREATEST(0, stok - ?) WHERE id=?", 
-                  [(int)$pp['jumlah'], (int)$pp['id_produk']]);
+                  [$jml_per_visit, (int)$pp['id_produk']]);
           }
+
+          // Catat riwayat kunjungan dengan membuat pendaftaran baru 
+          $no_antrian = generate_no_antrian($pdo, date('Y-m-d'));
+          safe_query($pdo,
+              "INSERT INTO pendaftaran (no_antrian, tanggal, id_pasien, id_dokter, id_layanan, id_karyawan, keluhan_utama, jenis_kunjungan, status, id_paket_layanan)
+               VALUES (?, CURDATE(), ?, ?, ?, ?, ?, 'lama', 'antri', ?)",
+              [$no_antrian, $paket['id_pasien'], $paket['id_dokter'], $paket['id_layanan'], $paket['id_karyawan'], 
+               "Kunjungan Paket (Ke-{$kunjungan_ke})", $paket['id_paket_layanan']]
+          );
 
           if ($new_sisa <= 0) {
               safe_query($pdo,
-                  "UPDATE paket_kunjungan SET sisa_kunjungan=0, status='selesai' WHERE id=?",
+                  "UPDATE paket_kunjungan SET sisa_kunjungan=0, status='selesai', last_visit_date=CURDATE() WHERE id=?",
                   [(int)$paket['id']]
               );
-              safe_query($pdo,
-                  "UPDATE pendaftaran SET status='selesai' WHERE id=?",
-                  [$id_pendaftaran]
-              );
-              $pdo->commit();
-              return [
-                  'success' => true,
-                  'last_visit' => true,
-                  'message' => 'Kunjungan terakhir. Pasien selesai.',
-              ];
           } else {
               safe_query($pdo,
-                  "UPDATE paket_kunjungan SET sisa_kunjungan=? WHERE id=?",
+                  "UPDATE paket_kunjungan SET sisa_kunjungan=?, last_visit_date=CURDATE() WHERE id=?",
                   [$new_sisa, (int)$paket['id']]
               );
-              safe_query($pdo,
-                  "UPDATE pendaftaran SET status='selesai' WHERE id=?",
-                  [$id_pendaftaran]
-              );
-              $pdo->commit();
-              return [
-                  'success' => true,
-                  'last_visit' => false,
-                  'sisa_kunjungan' => $new_sisa,
-                  'message' => "Kunjungan berhasil dicatat. Sisa {$new_sisa} kunjungan.",
-              ];
           }
+          $pdo->commit();
+          
+          return [
+              'success' => true,
+              'last_visit' => ($new_sisa <= 0),
+              'sisa_kunjungan' => max(0, $new_sisa),
+              'message' => "Kunjungan berhasil dicatat dan masuk antrian hari ini. Sisa {$new_sisa} kunjungan.",
+          ];
       } catch (Throwable $e) {
           $pdo->rollBack();
           throw new BridgeException('DB Error (Kunjungan Paket): ' . $e->getMessage());
