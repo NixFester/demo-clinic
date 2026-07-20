@@ -248,7 +248,15 @@ export default function LaporanPage() {
     }
   };
 
-  useEffect(() => { fetchHarian(); }, []);
+  useEffect(() => {
+    if (activeTab === 'harian' && !harianData) fetchHarian();
+    if (activeTab === 'bulanan' && !bulananData) fetchBulanan();
+    if (activeTab === 'layanan' && !layananData) fetchLayanan();
+    if (activeTab === 'produk' && !produkData) fetchProduk();
+    if (activeTab === 'dokter' && !dokterData) fetchDokter();
+    if (activeTab === 'rme' && !rmeData) fetchRme();
+    if (activeTab === 'range' && !rangeData) fetchRange();
+  }, [activeTab]);
 
    const handleExportPDF = async (tab: string) => {
     try {
