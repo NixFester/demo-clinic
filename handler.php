@@ -1243,19 +1243,13 @@ function tindakan_store(PDO $pdo, array $data): array
             $id_resep = (int)$resep['id'];
         }
 
-        $stmtProduk = $pdo->prepare(
-            "SELECT pp.id_produk, pp.jumlah, pl.total_kunjungan 
-             FROM paket_produk pp 
-             JOIN paket_layanan pl ON pl.id = pp.id_paket_layanan 
-             WHERE pp.id_paket_layanan = ?"
-        );
+        $stmtProduk = $pdo->prepare("SELECT id_produk, jumlah FROM paket_produk WHERE id_paket_layanan = ?");
         $stmtProduk->execute([(int)$data['id_paket_layanan']]);
         foreach ($stmtProduk->fetchAll() as $pp) {
-            $jml_per_visit = max(1, (int)ceil($pp['jumlah'] / max(1, (int)$pp['total_kunjungan'])));
             safe_query($pdo,
                 "INSERT INTO detail_resep (id_resep, id_produk, jumlah, dosis, aturan_pakai, keterangan, id_paket_layanan)
                  VALUES (?,?,?,?,?,?,?)",
-                [$id_resep, $pp['id_produk'], $jml_per_visit, '', 'Sesuai Paket', 'Dari paket layanan', (int)$data['id_paket_layanan']]
+                [$id_resep, $pp['id_produk'], $pp['jumlah'], '', 'Sesuai Paket', 'Dari paket layanan', (int)$data['id_paket_layanan']]
             );
         }
 
@@ -2981,13 +2975,12 @@ function rme_latestPerPasien(PDO $pdo, array $data): array
 
       $pdo->beginTransaction();
       try {
-          // Kurangi stok produk
+          // Kurangi stok produk (sesuai jumlah di paket_produk karena itu adalah per kunjungan)
           $stmt2 = $pdo->prepare("SELECT id_produk, jumlah FROM paket_produk WHERE id_paket_layanan = ?");
           $stmt2->execute([$paket['id_paket_layanan']]);
           foreach ($stmt2->fetchAll() as $pp) {
-              $jml_per_visit = max(1, (int)ceil($pp['jumlah'] / $total_kunjungan));
               safe_query($pdo, "UPDATE produk SET stok = GREATEST(0, stok - ?) WHERE id=?", 
-                  [$jml_per_visit, (int)$pp['id_produk']]);
+                  [(int)$pp['jumlah'], (int)$pp['id_produk']]);
           }
 
           // Catat riwayat kunjungan dengan membuat pendaftaran baru 
