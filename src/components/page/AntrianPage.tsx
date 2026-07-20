@@ -185,28 +185,6 @@ export default function AntrianPage() {
 
   const goToRME = (id: string) => router.push(`/dokter/rme/${parseInt(id)}`);
 
-  const handlePasienDatang = async (id: string) => {
-    setBusyId(id);
-    try {
-      const res = await fetch(`/api/paket/${id}/kunjungan`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        throw new Error(json.error ?? "Gagal mencatat kunjungan");
-      }
-      toast.success("Kunjungan berhasil dicatat");
-      fetchData();
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Gagal mencatat kunjungan",
-      );
-    } finally {
-      setBusyId(null);
-    }
-  };
-
   // ── Row actions (role-aware) ──────────────────────────────────────────────
 
   function RowActions({ item }: { item: AntrianItem }) {
@@ -215,7 +193,7 @@ export default function AntrianPage() {
     return (
       <div className="flex items-center justify-end gap-2">
         {/* PANGGIL — admin / karyawan / dokter on 'menunggu' */}
-        {item.status === "menunggu" && !item.id_paket && (isStaff(role) || isDokter(role)) && (
+        {item.status === "menunggu" && (isStaff(role) || isDokter(role)) && (
           <Button
             size="sm"
             variant="outline"
@@ -243,24 +221,6 @@ export default function AntrianPage() {
           >
             <FileText className="h-3 w-3 mr-1" />
             Buat RME
-          </Button>
-        )}
-
-        {/* PASIEN DATANG — karyawan on 'paket' for paket layanan multi-visit */}
-        {item.status === "menunggu" && !!item.id_paket && role === "karyawan" && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-blue-700 border-blue-300 hover:bg-blue-50"
-            disabled={busy}
-            onClick={() => handlePasienDatang(item.id)}
-          >
-            {busy ? (
-              <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-            ) : (
-              <UserCheck className="h-3 w-3 mr-1" />
-            )}
-            Pasien Datang
           </Button>
         )}
 
