@@ -860,16 +860,19 @@ function pendaftaran_store(PDO $pdo, array $data): array
     }
 
     $no_antrian = generate_no_antrian($pdo, $tanggal);
+    $id_paket = !empty($data['id_paket_layanan']) ? (int)$data['id_paket_layanan'] : null;
+    $status = $id_paket ? 'paket' : 'menunggu';
+
     safe_query($pdo,
         "INSERT INTO pendaftaran
-            (no_antrian, id_pasien, id_dokter, id_layanan, id_karyawan,
+            (no_antrian, id_pasien, id_dokter, id_layanan, id_paket_layanan, id_karyawan,
              tanggal, keluhan_utama, jenis_kunjungan, status, catatan)
-         VALUES (?,?,?,?,?,?,?,?,'menunggu',?)",
+         VALUES (?,?,?,?,?,?,?,?,?,?,?)",
         [
             $no_antrian, $data['id_pasien'], $data['id_dokter'],
-            $data['id_layanan'], $data['id_karyawan'],
+            $data['id_layanan'], $id_paket, $data['id_karyawan'],
             $tanggal, $data['keluhan_utama'], $data['jenis_kunjungan'],
-            $data['catatan'] ?? '',
+            $status, $data['catatan'] ?? '',
         ]
     );
     return ['id' => (int)$pdo->lastInsertId(), 'no_antrian' => $no_antrian];
@@ -2785,7 +2788,7 @@ function rme_latestPerPasien(PDO $pdo, array $data): array
               "SELECT pl.id, pl.sisa_kunjungan, pl.total_kunjungan, pl.id_layanan,
                       rm.id as id_rme
                FROM paket_layanan pl
-               JOIN pendaftaran p ON p.id_layanan = pl.id_layanan
+               JOIN pendaftaran p ON p.id_paket_layanan = pl.id
                LEFT JOIN rekam_medis rm ON rm.id_pendaftaran = p.id
                WHERE p.id = ? AND p.status = 'paket'
                LIMIT 1"
