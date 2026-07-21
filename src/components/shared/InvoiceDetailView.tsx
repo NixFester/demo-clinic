@@ -517,6 +517,35 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
         </CardContent>
       </Card>
 
+      {/* Discount editor (editable when invoice not paid) */}
+      {isBelumBayar && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Diskon</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2">
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={diskonPersen}
+                onChange={(e) => setDiskonPersen(e.target.value)}
+                placeholder="Persen (%)"
+              />
+              <Button
+                onClick={handleApplyDiskon}
+                disabled={applyingDiskon || !diskonPersen}
+              >
+                {applyingDiskon ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                Terapkan Diskon
+              </Button>
+            </div>
+            <p className="text-sm text-gray-500 mt-2">Masukkan persentase diskon untuk mengurangi subtotal.</p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Payment History */}
       {invoice.pembayaran && invoice.pembayaran.length > 0 && (
         <Card>
