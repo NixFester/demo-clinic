@@ -103,10 +103,13 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
     if (!diskonPersen) return;
     setApplyingDiskon(true);
     try {
+      // Calculate nominal discount from percentage and send as `diskon`
+      const persen = parseFloat(diskonPersen);
+      const nominal = invoice ? (persen > 0 ? (persen / 100) * (invoice.subtotal || 0) : 0) : 0;
       const res = await fetch(`/api/invoice/${id}/diskon`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ persen_diskon: parseFloat(diskonPersen) }),
+        body: JSON.stringify({ diskon: Math.round(nominal) }),
       });
       if (!res.ok) {
         const result = await res.json();
