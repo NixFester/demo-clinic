@@ -1,0 +1,379 @@
+SHOW CREATE TABLE detail_invoice;
+
+
+SHOW CREATE TABLE detail_resep;
+
+
+SHOW CREATE TABLE diagnosa;
+
+
+SHOW CREATE TABLE dokter;
+
+
+SHOW CREATE TABLE followup_wa;
+
+
+SHOW CREATE TABLE invoice;
+
+
+SHOW CREATE TABLE jadwal_dokter;
+
+
+SHOW CREATE TABLE layanan;
+
+
+SHOW CREATE TABLE paket_kunjungan;
+
+
+SHOW CREATE TABLE paket_layanan;
+
+
+SHOW CREATE TABLE paket_produk;
+
+
+SHOW CREATE TABLE pasien;
+
+
+SHOW CREATE TABLE pembayaran;
+
+
+SHOW CREATE TABLE pendaftaran;
+
+
+SHOW CREATE TABLE pengaturan;
+
+
+SHOW CREATE TABLE pengguna;
+
+
+SHOW CREATE TABLE produk;
+
+
+SHOW CREATE TABLE rekam_medis;
+
+
+SHOW CREATE TABLE resep;
+
+
+SHOW CREATE TABLE spesialisasi;
+
+
+SHOW CREATE TABLE tindakan_pasien;
+
+
+
+detail_invoice	CREATE TABLE `detail_invoice` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_invoice` int(11) NOT NULL,
+  `jenis` enum('layanan','produk','tindakan') NOT NULL,
+  `id_referensi` int(11) DEFAULT NULL,
+  `nama_item` varchar(200) NOT NULL,
+  `qty` int(11) NOT NULL DEFAULT 1,
+  `harga_satuan` decimal(12,2) NOT NULL,
+  `subtotal` decimal(12,2) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_detinv_invoice` (`id_invoice`),
+  CONSTRAINT `fk_detinv_invoice` FOREIGN KEY (`id_invoice`) REFERENCES `invoice` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=44 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+detail_resep	CREATE TABLE `detail_resep` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_resep` int(11) NOT NULL,
+  `id_produk` int(11) NOT NULL,
+  `jumlah` int(11) NOT NULL,
+  `dosis` varchar(100) DEFAULT NULL,
+  `aturan_pakai` varchar(150) DEFAULT NULL,
+  `keterangan` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `id_paket_layanan` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_detresep_resep` (`id_resep`),
+  KEY `fk_detresep_produk` (`id_produk`),
+  CONSTRAINT `fk_detresep_produk` FOREIGN KEY (`id_produk`) REFERENCES `produk` (`id`),
+  CONSTRAINT `fk_detresep_resep` FOREIGN KEY (`id_resep`) REFERENCES `resep` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+diagnosa	CREATE TABLE `diagnosa` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `kode_icd10` varchar(10) NOT NULL,
+  `nama_diagnosa` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_kode_icd10` (`kode_icd10`)
+) ENGINE=InnoDB AUTO_INCREMENT=20967 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+dokter	CREATE TABLE `dokter` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_pengguna` int(11) NOT NULL,
+  `id_spesialisasi` int(11) NOT NULL,
+  `no_sip` varchar(50) NOT NULL,
+  `is_aktif` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_dokter_pengguna` (`id_pengguna`),
+  KEY `fk_dokter_spesialisasi` (`id_spesialisasi`),
+  CONSTRAINT `fk_dokter_pengguna` FOREIGN KEY (`id_pengguna`) REFERENCES `pengguna` (`id`),
+  CONSTRAINT `fk_dokter_spesialisasi` FOREIGN KEY (`id_spesialisasi`) REFERENCES `spesialisasi` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+followup_wa	CREATE TABLE `followup_wa` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_pasien` int(11) NOT NULL,
+  `id_pengguna` int(11) NOT NULL,
+  `no_whatsapp` varchar(20) NOT NULL,
+  `pesan` text NOT NULL,
+  `wa_link` text NOT NULL,
+  `jenis` enum('konfirmasi','pengingat','pascakunjungan','kontrol') NOT NULL,
+  `status` enum('draft','terkirim','batal') NOT NULL DEFAULT 'draft',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_followup_pasien` (`id_pasien`),
+  KEY `fk_followup_pengguna` (`id_pengguna`),
+  CONSTRAINT `fk_followup_pasien` FOREIGN KEY (`id_pasien`) REFERENCES `pasien` (`id`),
+  CONSTRAINT `fk_followup_pengguna` FOREIGN KEY (`id_pengguna`) REFERENCES `pengguna` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+invoice	CREATE TABLE `invoice` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `no_invoice` varchar(30) NOT NULL,
+  `id_pendaftaran` int(11) NOT NULL,
+  `id_karyawan` int(11) NOT NULL,
+  `subtotal` decimal(12,2) NOT NULL,
+  `diskon` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `total` decimal(12,2) NOT NULL,
+  `total_dibayar` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `status` enum('belum_bayar','lunas','batal') NOT NULL DEFAULT 'belum_bayar',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_no_invoice` (`no_invoice`),
+  UNIQUE KEY `uq_inv_pendaftaran` (`id_pendaftaran`),
+  KEY `fk_inv_karyawan` (`id_karyawan`),
+  CONSTRAINT `fk_inv_karyawan` FOREIGN KEY (`id_karyawan`) REFERENCES `pengguna` (`id`),
+  CONSTRAINT `fk_inv_pendaftaran` FOREIGN KEY (`id_pendaftaran`) REFERENCES `pendaftaran` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=22 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+jadwal_dokter	CREATE TABLE `jadwal_dokter` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_dokter` int(11) NOT NULL,
+  `hari` varchar(255) NOT NULL,
+  `jam_mulai` time NOT NULL,
+  `jam_selesai` time NOT NULL,
+  `kuota` int(11) NOT NULL DEFAULT 20,
+  `is_aktif` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_jadwal_dokter` (`id_dokter`),
+  CONSTRAINT `fk_jadwal_dokter` FOREIGN KEY (`id_dokter`) REFERENCES `dokter` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+layanan	CREATE TABLE `layanan` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nama_layanan` varchar(150) NOT NULL,
+  `kategori` enum('kecantikan','medis','konsultasi') NOT NULL,
+  `harga` decimal(12,2) NOT NULL,
+  `durasi_menit` int(11) NOT NULL DEFAULT 30,
+  `is_aktif` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+paket_kunjungan	CREATE TABLE `paket_kunjungan` (
+  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `id_pendaftaran` int(11) NOT NULL,
+  `id_paket_layanan` int(11) NOT NULL,
+  `total_kunjungan` int(11) NOT NULL DEFAULT 0,
+  `sisa_kunjungan` int(11) NOT NULL DEFAULT 0,
+  `status` varchar(20) NOT NULL DEFAULT 'aktif',
+  `created_at` timestamp NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `last_visit_date` date DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_pendaftaran` (`id_pendaftaran`),
+  KEY `idx_paket_layanan` (`id_paket_layanan`)
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci	
+paket_layanan	CREATE TABLE `paket_layanan` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nama_paket` varchar(255) NOT NULL,
+  `id_layanan` int(11) NOT NULL,
+  `harga_total` decimal(12,2) DEFAULT 0.00,
+  `total_kunjungan` int(11) DEFAULT 1,
+  `sisa_kunjungan` int(11) DEFAULT 1,
+  `is_aktif` tinyint(4) DEFAULT 1,
+  `created_at` datetime DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `id_layanan` (`id_layanan`),
+  CONSTRAINT `paket_layanan_ibfk_1` FOREIGN KEY (`id_layanan`) REFERENCES `layanan` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci	
+paket_produk	CREATE TABLE `paket_produk` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_paket_layanan` int(11) NOT NULL,
+  `id_produk` int(11) NOT NULL,
+  `jumlah` int(11) DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `id_paket_layanan` (`id_paket_layanan`),
+  KEY `id_produk` (`id_produk`),
+  CONSTRAINT `paket_produk_ibfk_1` FOREIGN KEY (`id_paket_layanan`) REFERENCES `paket_layanan` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `paket_produk_ibfk_2` FOREIGN KEY (`id_produk`) REFERENCES `produk` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci	
+pasien	CREATE TABLE `pasien` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `no_rekam_medis` varchar(20) NOT NULL,
+  `nik` varchar(16) NOT NULL DEFAULT uuid(),
+  `nama_lengkap` varchar(100) NOT NULL,
+  `tempat_lahir` varchar(100) DEFAULT NULL,
+  `tanggal_lahir` date DEFAULT NULL,
+  `jenis_kelamin` enum('L','P') NOT NULL,
+  `alamat` text DEFAULT NULL,
+  `no_telepon` varchar(20) DEFAULT NULL,
+  `no_whatsapp` varchar(20) DEFAULT NULL,
+  `golongan_darah` enum('A','B','AB','O','tidak_diketahui') NOT NULL DEFAULT 'tidak_diketahui',
+  `alergi` text DEFAULT NULL,
+  `catatan_kulit` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_no_rekam_medis` (`no_rekam_medis`),
+  UNIQUE KEY `uq_nik` (`nik`)
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+pembayaran	CREATE TABLE `pembayaran` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_invoice` int(11) NOT NULL,
+  `id_karyawan` int(11) NOT NULL,
+  `metode` enum('tunai','transfer','qris','debit') NOT NULL,
+  `nominal` decimal(12,2) NOT NULL,
+  `kembalian` decimal(12,2) NOT NULL DEFAULT 0.00,
+  `waktu_bayar` datetime NOT NULL,
+  `catatan` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_bayar_invoice` (`id_invoice`),
+  KEY `fk_bayar_karyawan` (`id_karyawan`),
+  CONSTRAINT `fk_bayar_invoice` FOREIGN KEY (`id_invoice`) REFERENCES `invoice` (`id`),
+  CONSTRAINT `fk_bayar_karyawan` FOREIGN KEY (`id_karyawan`) REFERENCES `pengguna` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+pendaftaran	CREATE TABLE `pendaftaran` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `no_antrian` int(11) NOT NULL,
+  `id_pasien` int(11) NOT NULL,
+  `id_dokter` int(11) NOT NULL,
+  `id_layanan` int(11) DEFAULT NULL,
+  `id_karyawan` int(11) NOT NULL,
+  `tanggal` date NOT NULL,
+  `keluhan_utama` text DEFAULT NULL,
+  `jenis_kunjungan` enum('baru','lama','kontrol') NOT NULL,
+  `status` enum('menunggu','dipanggil','selesai','batal') NOT NULL DEFAULT 'menunggu',
+  `catatan` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `id_paket` int(11) DEFAULT NULL,
+  `id_paket_layanan` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_pend_pasien` (`id_pasien`),
+  KEY `fk_pend_dokter` (`id_dokter`),
+  KEY `fk_pend_layanan` (`id_layanan`),
+  KEY `fk_pend_karyawan` (`id_karyawan`),
+  CONSTRAINT `fk_pend_dokter` FOREIGN KEY (`id_dokter`) REFERENCES `dokter` (`id`),
+  CONSTRAINT `fk_pend_karyawan` FOREIGN KEY (`id_karyawan`) REFERENCES `pengguna` (`id`),
+  CONSTRAINT `fk_pend_layanan` FOREIGN KEY (`id_layanan`) REFERENCES `layanan` (`id`),
+  CONSTRAINT `fk_pend_pasien` FOREIGN KEY (`id_pasien`) REFERENCES `pasien` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=86 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+pengaturan	CREATE TABLE `pengaturan` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nama_klinik` varchar(150) NOT NULL DEFAULT 'Klinik Kecantikan',
+  `alamat_klinik` text DEFAULT NULL,
+  `no_telepon_klinik` varchar(20) DEFAULT NULL,
+  `batas_diskon_karyawan` int(11) NOT NULL DEFAULT 20,
+  `footer_invoice` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+pengguna	CREATE TABLE `pengguna` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nama_lengkap` varchar(100) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `role` enum('superadmin','admin','dokter','karyawan','kasir') NOT NULL,
+  `is_aktif` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_username` (`username`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+produk	CREATE TABLE `produk` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nama_produk` varchar(150) NOT NULL,
+  `kategori` enum('skincare','obat','suplemen','lainnya') NOT NULL,
+  `satuan` varchar(20) NOT NULL,
+  `harga_jual` decimal(12,2) NOT NULL,
+  `stok` int(11) NOT NULL DEFAULT 0,
+  `stok_minimum` int(11) NOT NULL DEFAULT 5,
+  `is_aktif` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+rekam_medis	CREATE TABLE `rekam_medis` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_pendaftaran` int(11) NOT NULL,
+  `id_pasien` int(11) NOT NULL,
+  `id_dokter` int(11) NOT NULL,
+  `id_diagnosa_utama` int(11) DEFAULT NULL,
+  `id_diagnosa_sekunder` int(11) DEFAULT NULL,
+  `subjektif` text DEFAULT NULL,
+  `objektif` text DEFAULT NULL,
+  `assesment` text DEFAULT NULL,
+  `plan` text DEFAULT NULL,
+  `kondisi_masuk` text DEFAULT NULL,
+  `kondisi_keluar` text DEFAULT NULL,
+  `instruksi_tindak_lanjut` text DEFAULT NULL,
+  `status` enum('draft','final','batal') NOT NULL DEFAULT 'draft',
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_rme_pendaftaran` (`id_pendaftaran`),
+  KEY `fk_rme_pasien` (`id_pasien`),
+  KEY `fk_rme_dokter` (`id_dokter`),
+  KEY `fk_rme_diagnosa_utama` (`id_diagnosa_utama`),
+  KEY `fk_rme_diagnosa_sekunder` (`id_diagnosa_sekunder`),
+  CONSTRAINT `fk_rme_diagnosa_sekunder` FOREIGN KEY (`id_diagnosa_sekunder`) REFERENCES `diagnosa` (`id`),
+  CONSTRAINT `fk_rme_diagnosa_utama` FOREIGN KEY (`id_diagnosa_utama`) REFERENCES `diagnosa` (`id`),
+  CONSTRAINT `fk_rme_dokter` FOREIGN KEY (`id_dokter`) REFERENCES `dokter` (`id`),
+  CONSTRAINT `fk_rme_pasien` FOREIGN KEY (`id_pasien`) REFERENCES `pasien` (`id`),
+  CONSTRAINT `fk_rme_pendaftaran` FOREIGN KEY (`id_pendaftaran`) REFERENCES `pendaftaran` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=46 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+resep	CREATE TABLE `resep` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_rme` int(11) NOT NULL,
+  `catatan` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `fk_resep_rme` (`id_rme`),
+  CONSTRAINT `fk_resep_rme` FOREIGN KEY (`id_rme`) REFERENCES `rekam_medis` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+spesialisasi	CREATE TABLE `spesialisasi` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nama_spesialisasi` varchar(100) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	
+tindakan_pasien	CREATE TABLE `tindakan_pasien` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `id_rme` int(11) NOT NULL,
+  `id_layanan` int(11) NOT NULL,
+  `harga_saat_itu` decimal(12,2) NOT NULL,
+  `keterangan` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `id_paket_layanan` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_tindakan_rme` (`id_rme`),
+  KEY `fk_tindakan_layanan` (`id_layanan`),
+  CONSTRAINT `fk_tindakan_layanan` FOREIGN KEY (`id_layanan`) REFERENCES `layanan` (`id`),
+  CONSTRAINT `fk_tindakan_rme` FOREIGN KEY (`id_rme`) REFERENCES `rekam_medis` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci	

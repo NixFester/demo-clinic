@@ -765,7 +765,8 @@ function antrian_hari_ini(PDO $pdo, array $data): array
                          l.nama_layanan,
                          rm.id as id_rme, rm.status as status_rme,
                          pas.no_whatsapp as no_whatsapp,
-                         pk.sisa_kunjungan, pk.total_kunjungan
+                         pk.sisa_kunjungan, pk.total_kunjungan,
+                         (CASE WHEN i.id IS NOT NULL THEN 1 ELSE 0 END) as has_invoice
                   FROM pendaftaran p
                   JOIN pasien pas ON pas.id = p.id_pasien
                   JOIN dokter d ON d.id = p.id_dokter
@@ -773,6 +774,7 @@ function antrian_hari_ini(PDO $pdo, array $data): array
                   LEFT JOIN layanan l ON l.id = p.id_layanan
                   LEFT JOIN rekam_medis rm ON rm.id_pendaftaran = p.id
                   LEFT JOIN paket_kunjungan pk ON pk.id_pendaftaran = p.id
+                  LEFT JOIN invoice i ON i.id_pendaftaran = p.id
                   WHERE (p.tanggal = ? AND (p.keluhan_utama NOT LIKE 'Kunjungan Paket%')) 
                      OR (pk.sisa_kunjungan > 0 AND p.status = 'selesai' AND (pk.last_visit_date IS NULL OR pk.last_visit_date != ?))";
     
@@ -1736,58 +1738,14 @@ function pembayaran_store(PDO $pdo, array $data): array
         $lunas = $total_dibayar >= (float)$inv['total'];
         if ($lunas) {
             safe_query($pdo, "UPDATE invoice SET status='lunas' WHERE id=?", [$id_invoice]);
-            
-            // Deduct stok produk
-            try {
-                $stmt = $pdo->prepare(
-                    "SELECT di.id_referensi, di.qty
-                     FROM detail_invoice di
-                     WHERE di.id_invoice = ? AND di.jenis = 'produk'"
-                );
-                $stmt->execute([$id_invoice]);
-                $produk_items = $stmt->fetchAll();
-            } catch (PDOException $e) {
-                throw new BridgeException('DB Error (Fetch Produk Items): ' . $e->getMessage());
-            }
 
-            foreach ($produk_items as $pi) {
-                try {
-                    $stmt2 = $pdo->prepare("SELECT id_produk FROM detail_resep WHERE id=?");
-                    $stmt2->execute([(int)$pi['id_referensi']]);
-                    $dr = $stmt2->fetch();
-                } catch (PDOException $e) {
-                    throw new BridgeException('DB Error (Fetch Resep): ' . $e->getMessage());
-                }
-
-                if ($dr) {
-                    safe_query($pdo, "UPDATE produk SET stok = GREATEST(0, stok - ?) WHERE id=?", [(int)$pi['qty'], (int)$dr['id_produk']]);
-                }
-            }
-
-            // Deduct stok produk dari paket (jika ada) - Kunjungan Pertama
-            try {
-                $stmt3 = $pdo->prepare("SELECT id_pendaftaran FROM invoice WHERE id=?");
-                $stmt3->execute([$id_invoice]);
-                $id_pend = $stmt3->fetchColumn();
-
-                if ($id_pend) {
-                    // Cek paket dari pendaftaran
-                    $stmt4 = $pdo->prepare("SELECT id_paket_layanan FROM pendaftaran WHERE id=?");
-                    $stmt4->execute([$id_pend]);
-                    $id_paket = $stmt4->fetchColumn();
-
-                    if ($id_paket) {
-                        $stmt5 = $pdo->prepare("SELECT id_produk, jumlah FROM paket_produk WHERE id_paket_layanan = ?");
-                        $stmt5->execute([$id_paket]);
-                        foreach ($stmt5->fetchAll() as $pp) {
-                            safe_query($pdo, "UPDATE produk SET stok = GREATEST(0, stok - ?) WHERE id=?", 
-                                [(int)$pp['jumlah'], (int)$pp['id_produk']]);
-                        }
-                    }
-                }
-            } catch (PDOException $e) {
-                throw new BridgeException('DB Error (Fetch Paket Produk): ' . $e->getMessage());
-            }
+            // REMOVED: All stock deductions from payment
+            // Stock deduction for paket is handled by pasien_datang button for ALL visits
+            // (including first visit after payment confirms the visit)
+            // Keeping stock deduction here would cause double-deduction.
+            //
+            // Stock should only be deducted when the patient actually uses the products,
+            // which happens when "Pasien Datang" button is clicked, not during payment.
         }
         $pdo->commit();
     } catch (Throwable $e) {

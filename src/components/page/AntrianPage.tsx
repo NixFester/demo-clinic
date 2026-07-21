@@ -273,8 +273,8 @@ export default function AntrianPage() {
           </Button>
         )}
 
-        {/* SIAPKAN OBAT — karyawan on 'selesai' with RME or active package visit */}
-        {item.status === "selesai" && role === "karyawan" && (item.id_rme || ((item.sisa_kunjungan ?? 0) > 0 && !isTodayVisit)) && (
+        {/* SIAPKAN OBAT — karyawan on 'selesai' with RME or active package visit (BEFORE invoice generated) */}
+        {item.status === "selesai" && role === "karyawan" && (item.id_rme || ((item.sisa_kunjungan ?? 0) > 0 && !item.has_invoice)) && (
           <Button
             size="sm"
             variant="outline"
@@ -283,6 +283,19 @@ export default function AntrianPage() {
           >
             <Package className="h-3 w-3 mr-1" />
             Siapkan Obat
+          </Button>
+        )}
+
+        {/* PASIEN DATANG — karyawan on 'selesai' with remaining package visits (AFTER invoice generated) */}
+        {item.status === "selesai" && role === "karyawan" && (item.sisa_kunjungan ?? 0) > 0 && item.has_invoice && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-purple-700 border-purple-300 hover:bg-purple-50"
+            onClick={() => handlePasienDatang(item.id_pendaftaran ?? item.id)}
+          >
+            <UserCheck className="h-3 w-3 mr-1" />
+            Pasien Datang
           </Button>
         )}
 
@@ -524,7 +537,7 @@ export default function AntrianPage() {
                 <Button variant="outline" onClick={closeObatDialog}>
                   Tutup
                 </Button>
-                {selectedItem.status === "selesai" && (selectedItem.sisa_kunjungan ?? 0) > 0 && !isVisitToday(selectedItem) && isStaff(role) && (
+                {selectedItem.status === "selesai" && (selectedItem.sisa_kunjungan ?? 0) > 0 && selectedItem.has_invoice && isStaff(role) && (
                   <Button
                     className="bg-purple-600 hover:bg-purple-700 text-white"
                     disabled={busyId === selectedItem.id}

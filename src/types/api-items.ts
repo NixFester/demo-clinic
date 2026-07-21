@@ -384,6 +384,8 @@ export interface AntrianItem {
   total_kunjungan?: number;
   sisa_kunjungan?: number;
   last_visit_date?: string | null;
+  // invoice (to determine button state for paket patients)
+  has_invoice?:    number;  // 1 = invoice exists, 0 = no invoice
 }
 
 // antrian.hari_ini → ListResponse<AntrianItem>
