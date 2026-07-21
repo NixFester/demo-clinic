@@ -144,9 +144,11 @@ export function InvoiceDetail({ invoice }: InvoiceDetailProps) {
             <span>Subtotal</span>
             <span>{formatCurrency(invoice.subtotal || 0)}</span>
           </div>
-          {invoice.diskon_persen > 0 && (
+          {(invoice.diskon_persen > 0 || invoice.diskon_nominal > 0) && (
             <div className="flex justify-between text-sm text-yellow-600">
-              <span>Diskon ({invoice.diskon_persen}%)</span>
+              <span>
+                Diskon{invoice.diskon_persen > 0 ? ` (${invoice.diskon_persen}%)` : ''}
+              </span>
               <span>-{formatCurrency(invoice.diskon_nominal || 0)}</span>
             </div>
           )}

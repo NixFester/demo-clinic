@@ -491,6 +491,12 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
             <span>Subtotal</span>
             <span>{formatCurrency(invoice.subtotal || 0)}</span>
           </div>
+          {invoice.diskon > 0 && (
+            <div className="flex justify-between text-sm text-yellow-600">
+              <span>Diskon</span>
+              <span>-{formatCurrency(invoice.diskon)}</span>
+            </div>
+          )}
           <div className="flex justify-between font-bold text-lg border-t pt-2">
             <span>Total</span>
             <span>{formatCurrency(invoice.total || 0)}</span>
