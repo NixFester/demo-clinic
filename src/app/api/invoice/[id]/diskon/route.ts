@@ -37,7 +37,7 @@ export async function PATCH(
     }
 
     console.log(`[API /invoice/${id}/diskon] Applying discount: ${diskon}`);
-    const result = await callBridge("invoice.applyDiskon", { id_invoice: parseInt(id), diskon });
+    const result = await callBridge("invoice.applyDiskon", { id: parseInt(id), diskon });
     return NextResponse.json(result);
   } catch (error: unknown) {
     console.error("[API /invoice/[id]/diskon] PATCH error:", error);
