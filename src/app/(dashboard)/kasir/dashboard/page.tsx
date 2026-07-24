@@ -82,11 +82,11 @@ export default function KasirDashboardPage() {
     }
 
     if (item.status_invoice === 'belum_bayar') {
-      router.push(`/kasir/${item.id_invoice}`);
+      router.push(`/kasir/view?id=${item.id_invoice}`);
       return;
     }
 
-    router.push(`/kasir/${item.id_invoice}`);
+    router.push(`/kasir/view?id=${item.id_invoice}`);
   };
 
   return (

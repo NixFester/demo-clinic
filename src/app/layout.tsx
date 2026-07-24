@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: "Elrhea Clinic - Sistem informasi manajemen klinik terpadu untuk pendaftaran, antrian, rekam medis, kasir, dan laporan.",
 };
 
+import AppConfigProvider from "@/components/providers/AppConfigProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -29,9 +31,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <AppConfigProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </AppConfigProvider>
         <Toaster richColors position="top-right" />
       </body>
     </html>

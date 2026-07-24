@@ -266,7 +266,7 @@ export default function KasirListView({
                       variant="ghost"
                       className="flex-1"
                       onClick={() =>
-                        window.open(`/print/invoice/${item.id}`, "_blank")
+                        window.open(`/print/invoice/view?id=${item.id}`, "_blank")
                       }
                     >
                       <Printer className="h-4 w-4 mr-1" />
@@ -338,7 +338,7 @@ export default function KasirListView({
                             onClick={() => {
                               if (typeof window !== "undefined") {
                                 window.open(
-                                  `/print/invoice/${item.id}`,
+                                  `/print/invoice/view?id=${item.id}`,
                                   "_blank",
                                   "noopener,noreferrer",
                                 );

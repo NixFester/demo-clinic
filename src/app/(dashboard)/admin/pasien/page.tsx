@@ -93,7 +93,7 @@ export default function PasienListPage() {
                       <TableCell>{p.tanggal_lahir ? formatDate(p.tanggal_lahir) : '-'}</TableCell>
                       <TableCell>{p.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" onClick={() => router.push(`/admin/pasien/${p.id}`)}>
+                        <Button size="sm" variant="ghost" onClick={() => router.push(`/admin/pasien/view?id=${p.id}`)}>
                           <Eye className="h-4 w-4 mr-1" /> Detail
                         </Button>
                       </TableCell>

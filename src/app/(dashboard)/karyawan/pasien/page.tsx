@@ -115,7 +115,7 @@ export default function KaryawanPasienPage() {
                         <TableCell>{p.no_whatsapp || '-'}</TableCell>
                         <TableCell>{p.tanggal_lahir ? formatDate(p.tanggal_lahir) : '-'}</TableCell>
                         <TableCell className="text-right">
-                          <Button size="sm" variant="ghost" onClick={() => router.push(`/karyawan/pasien/${p.id}`)}>
+                          <Button size="sm" variant="ghost" onClick={() => router.push(`/karyawan/pasien/view?id=${p.id}`)}>
                             <Eye className="h-4 w-4 mr-1" /> Detail
                           </Button>
                         </TableCell>

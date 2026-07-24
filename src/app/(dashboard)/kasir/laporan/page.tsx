@@ -294,7 +294,7 @@ export default function KasirLaporanPage() {
                             variant="ghost"
                             className="inline-flex items-center gap-2"
                             onClick={() => {
-                              if (item.id_invoice) router.push(`/kasir/${item.id_invoice}`);
+                              if (item.id_invoice) router.push(`/kasir/view?id=${item.id_invoice}`);
                               else toast.error('Invoice tidak tersedia');
                             }}
                           >

@@ -198,7 +198,7 @@ export default function AntrianPage() {
     }
   };
 
-  const goToRME = (id: string) => router.push(`/dokter/rme/buat/${parseInt(id)}`);
+  const goToRME = (id: string) => router.push(`/dokter/rme/buat/view?id_pendaftaran=${parseInt(id)}`);
 
   const isVisitToday = (it: AntrianItem | null) => {
     if (!it) return false;
@@ -266,7 +266,7 @@ export default function AntrianPage() {
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => router.push(`/dokter/rme/${item.id_pendaftaran ?? item.id}`)}
+            onClick={() => router.push(`/dokter/rme/view?id=${item.id_pendaftaran ?? item.id}`)}
           >
             <FileText className="h-3 w-3 mr-1" />
             Lihat RME

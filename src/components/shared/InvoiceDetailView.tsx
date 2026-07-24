@@ -174,7 +174,7 @@ export default function InvoiceDetailView({ id, backHref }: InvoiceDetailViewPro
 
   const handleCetak = () => {
     if (typeof window !== 'undefined' && invoice) {
-      window.open(`/print/invoice/${invoice.id}`, '_blank', 'noopener,noreferrer');
+      window.open(`/print/invoice/view?id=${invoice.id}`, '_blank', 'noopener,noreferrer');
     }
   };
 

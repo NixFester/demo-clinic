@@ -77,7 +77,7 @@ export default function RMEListPage() {
                       <TableCell><StatusBadge status={item.status} /></TableCell>
                       <TableCell>{(item.updated_at && formatDateTime(item.updated_at) || item.created_at && formatDateTime(item.created_at))}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="ghost" onClick={() => router.push(`/admin/rme/${item.id}`)}>
+                        <Button size="sm" variant="ghost" onClick={() => router.push(`/admin/rme/view?id=${item.id}`)}>
                           <Eye className="h-4 w-4 mr-1" /> Lihat
                         </Button>
                       </TableCell>
